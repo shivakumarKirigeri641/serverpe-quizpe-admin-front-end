@@ -26,6 +26,8 @@ import Settings from './pages/Settings.jsx';
 import LiveFeed from './pages/LiveFeed.jsx';
 import Questions from './pages/Questions.jsx';
 import Tonight from './pages/Tonight.jsx';
+import WhatsAppPage from './pages/WhatsApp.jsx';
+import Inbox from './pages/Inbox.jsx';
 
 export const Brand = createContext({ business: {}, logos: {} });
 export const useBrand = () => useContext(Brand);
@@ -36,9 +38,11 @@ const NAV = [
   { to: '/live', label: 'Live activity', icon: '📡' },
   { to: '/analytics', label: 'Analytics', icon: '📈' },
   { to: '/parents', label: 'Parents & students', icon: '👨‍👩‍👧' },
+  { to: '/whatsapp', label: 'Conversations', icon: '💬' },
   { to: '/questions', label: 'Question bank', icon: '❓' },
   { to: '/reports', label: 'Reports', icon: '📄' },
   { to: '/finance', label: 'Finance & GST', icon: '₹' },
+  { to: '/inbox', label: 'Inbox', icon: '📥' },
   { to: '/support', label: 'Support', icon: '💬' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ];
@@ -95,9 +99,11 @@ export default function App() {
                 <Route path="/parents" element={<Parents />} />
                 <Route path="/parents/:id" element={<ParentDetail />} />
                 <Route path="/quizzes/:trackerId" element={<QuizDetail />} />
+                <Route path="/whatsapp" element={<WhatsAppPage />} />
                 <Route path="/questions" element={<Questions />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/finance" element={<Finance />} />
+                <Route path="/inbox" element={<Inbox />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

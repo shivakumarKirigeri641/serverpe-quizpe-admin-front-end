@@ -88,6 +88,18 @@ export const api = {
 
   system: () => request('/system'),
 
+  waSessions: ({ q = '', limit = 25, offset = 0 } = {}) =>
+    request(`/whatsapp/sessions?q=${encodeURIComponent(q)}&limit=${limit}&offset=${offset}`),
+  waThread: (id) => request(`/whatsapp/sessions/${id}`),
+  waRaw: (id) => request(`/whatsapp/messages/${id}/raw`),
+
+  enquiries: (status) => request(`/enquiries${status ? `?status=${status}` : ''}`),
+  updateEnquiry: (id, status) => request(`/enquiries/${id}`, { method: 'PATCH', body: { status } }),
+  adminTestimonials: () => request('/testimonials'),
+  updateTestimonial: (id, body) => request(`/testimonials/${id}`, { method: 'PATCH', body }),
+  promotable: () => request('/feedback/promotable'),
+  promoteFeedback: (id) => request(`/feedback/${id}/promote`, { method: 'POST', body: {} }),
+
   activity: ({ limit = 60, since = null, kinds = null } = {}) => {
     const p = new URLSearchParams({ limit });
     if (since) p.set('since', since);
