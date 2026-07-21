@@ -1,0 +1,27 @@
+{
+  "name": "serverpe-quizpe-admin-front-end",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "QuizPe admin panel — analytics, parents, quizzes, finance and GST",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.20",
+    "tailwindcss": "^3.4.19",
+    "vite": "^5.4.11"
+  },
+  "dependencies": {
+    "framer-motion": "^12.42.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.1",
+    "recharts": "^3.10.0",
+    "xlsx": "^0.18.5"
+  }
+}
