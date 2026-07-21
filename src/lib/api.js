@@ -14,6 +14,11 @@
 
 const KEY = 'quizpe.admin.token';
 
+// Empty in development, where Vite proxies /admin/api to port 5008. In
+// production the panel is admin.quizpe.in and the API is api.quizpe.in, so
+// this is set to that absolute origin at build time via VITE_API_BASE.
+export const API_BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+
 export const getToken = () => sessionStorage.getItem(KEY);
 export const setToken = (t) => sessionStorage.setItem(KEY, t);
 export const clearToken = () => sessionStorage.removeItem(KEY);
@@ -29,12 +34,14 @@ async function request(path, { method = 'GET', body, signal } = {}) {
 
   let res;
   try {
-    res = await fetch(`/admin/api${path}`, {
+    res = await fetch(`${API_BASE}/admin/api${path}`, {
       method, headers, signal,
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch {
-    throw new Error('Cannot reach the server. Is the back-end running on port 5008?');
+    throw new Error(API_BASE
+      ? `Cannot reach the server at ${API_BASE}. Please check your connection.`
+      : 'Cannot reach the server. Is the back-end running on port 5008?');
   }
 
   if (res.status === 401) {
@@ -51,7 +58,8 @@ async function request(path, { method = 'GET', body, signal } = {}) {
 }
 
 export const api = {
-  login: (mobile, pin) => request('/login', { method: 'POST', body: { mobile, pin } }),
+  requestOtp: (mobile) => request('/otp', { method: 'POST', body: { mobile } }),
+  login: (mobile, code) => request('/login', { method: 'POST', body: { mobile, code } }),
   me: () => request('/me'),
 
   dashboard: () => request('/dashboard'),
