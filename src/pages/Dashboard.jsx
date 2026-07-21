@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { api } from '../lib/api';
 import { Page, Stat, Loading, ErrorBox, Pill, inr } from '../components/ui.jsx';
+import CohortHealth from '../components/CohortHealth.jsx';
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
@@ -44,6 +45,9 @@ export default function Dashboard() {
         <Stat index={3} label="Open tickets" value={o.open_tickets}
               sub={o.open_tickets ? 'needs attention' : 'all clear'} />
       </div>
+
+      {/* the day read as shares rather than raw counts */}
+      <div className="mb-6"><CohortHealth /></div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Stat index={4} label="Active parents" value={o.parents_total} sub={`${o.students_total} children`} />
