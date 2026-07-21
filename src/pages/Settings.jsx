@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import { Page, Loading, ErrorBox, Pill } from '../components/ui.jsx';
+import ConfirmSave from '../components/ConfirmSave.jsx';
 
 const TABLES = [
   { name: 'quizpe_plans', label: 'Plans' },
@@ -29,6 +30,8 @@ export default function Settings() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(null);
   const [edits, setEdits] = useState({});
+  const [pending, setPending] = useState(null);   // row awaiting confirmation
+  const [toast, setToast] = useState('');
 
   const load = () => {
     setError(''); setEdits({});
@@ -38,15 +41,36 @@ export default function Settings() {
   };
   useEffect(load, [tab]);
 
-  const save = async (row) => {
+  /** Step 1 — build the diff and ask. Nothing is written yet. */
+  const askToSave = (row) => {
     const patch = edits[row.id];
     if (!patch) return;
+    // Only fields that genuinely differ; an inline input that was focused and
+    // left unchanged should not appear in the dialog as a change.
+    const changes = {};
+    Object.entries(patch).forEach(([k, to]) => {
+      const from = row[k];
+      if (String(from ?? '') !== String(to ?? '')) changes[k] = { from, to };
+    });
+    if (!Object.keys(changes).length) {
+      setEdits((e) => { const n = { ...e }; delete n[row.id]; return n; });
+      return;
+    }
+    setPending({ row, patch, changes });
+  };
+
+  /** Step 2 — the admin confirmed; write it. */
+  const confirmSave = async () => {
+    const { row, patch } = pending;
     setSaving(row.id);
     try {
       const r = await api.updateRow(tab, row.id, patch);
       setData((d) => ({ ...d, rows: d.rows.map((x) => (x.id === row.id ? r.row : x)) }));
       setEdits((e) => { const n = { ...e }; delete n[row.id]; return n; });
-    } catch (e) { setError(e.message); }
+      setPending(null);
+      setToast(`${TABLES.find((t) => t.name === tab)?.label || 'Row'} updated.`);
+      setTimeout(() => setToast(''), 3500);
+    } catch (e) { setError(e.message); setPending(null); }
     finally { setSaving(null); }
   };
 
@@ -136,7 +160,7 @@ export default function Settings() {
                     })}
                     <td className="td">
                       <button className="btn-pri text-xs py-1.5" disabled={!dirty || saving === row.id}
-                              onClick={() => save(row)}>
+                              onClick={() => askToSave(row)}>
                         {saving === row.id ? 'Saving…' : 'Save'}
                       </button>
                     </td>
@@ -152,6 +176,28 @@ export default function Settings() {
         Parents, students and the question bank are intentionally read-only here — editing them
         by hand would desync live quizzes and the adaptive engine.
       </p>
+      <ConfirmSave
+        open={!!pending}
+        tableLabel={TABLES.find((t) => t.name === tab)?.label || tab}
+        rowLabel={pending
+          ? (pending.row.plan_name || pending.row.addon_name || pending.row.offer_name
+             || pending.row.title || pending.row.company_name || `Row #${pending.row.id}`)
+          : ''}
+        changes={pending?.changes}
+        busy={saving === pending?.row?.id}
+        onConfirm={confirmSave}
+        onCancel={() => setPending(null)}
+      />
+
+      {/* Confirmation that the write landed — without it, a successful save is
+          indistinguishable from a click that did nothing. */}
+      {toast && (
+        <div role="status"
+             className="fixed bottom-6 right-6 z-50 rounded-xl bg-brand text-white px-4 py-3
+                        text-sm font-semibold shadow-lg">
+          ✅ {toast}
+        </div>
+      )}
     </Page>
   );
 }

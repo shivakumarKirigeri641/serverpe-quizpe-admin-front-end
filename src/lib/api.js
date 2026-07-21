@@ -64,6 +64,7 @@ export const api = {
 
   dashboard: () => request('/dashboard'),
   daily: (days = 30) => request(`/analytics/daily?days=${days}`),
+  participation: (days = 30) => request(`/analytics/participation?days=${days}`),
   cohort: (date) => request(`/analytics/cohort${date ? `?date=${date}` : ''}`),
   plans: () => request('/analytics/plans'),
   engagement: () => request('/analytics/engagement'),

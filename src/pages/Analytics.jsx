@@ -7,6 +7,7 @@ import {
   Tooltip, CartesianGrid, Legend, PieChart, Pie, Cell,
 } from 'recharts';
 import { api } from '../lib/api';
+import AttendanceChart from '../components/AttendanceChart.jsx';
 import { Page, Loading, ErrorBox, Pill, inr } from '../components/ui.jsx';
 
 const COLORS = ['#00a884', '#075e54', '#13b48f', '#f4a261', '#e76f51'];
@@ -65,6 +66,8 @@ export default function Analytics() {
             </ResponsiveContainer>
           </div>
         </motion.div>
+
+        <div className="lg:col-span-2"><AttendanceChart days={14} /></div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="card p-5">
           <h2 className="font-bold text-brand mb-4">Average score</h2>
