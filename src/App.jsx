@@ -25,12 +25,14 @@ import Support from './pages/Support.jsx';
 import Settings from './pages/Settings.jsx';
 import LiveFeed from './pages/LiveFeed.jsx';
 import Questions from './pages/Questions.jsx';
+import Tonight from './pages/Tonight.jsx';
 
 export const Brand = createContext({ business: {}, logos: {} });
 export const useBrand = () => useContext(Brand);
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: '📊', end: true },
+  { to: '/tonight', label: 'Tonight (live)', icon: '🟢' },
   { to: '/live', label: 'Live activity', icon: '📡' },
   { to: '/analytics', label: 'Analytics', icon: '📈' },
   { to: '/parents', label: 'Parents & students', icon: '👨‍👩‍👧' },
@@ -87,6 +89,7 @@ export default function App() {
             >
               <Routes>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/tonight" element={<Tonight />} />
                 <Route path="/live" element={<LiveFeed />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/parents" element={<Parents />} />

@@ -59,12 +59,16 @@ export const api = {
   plans: () => request('/analytics/plans'),
   engagement: () => request('/analytics/engagement'),
   feed: (limit = 50) => request(`/feed?limit=${limit}`),
+  tonight: () => request('/tonight'),
 
   parents: ({ q = '', limit = 25, offset = 0 } = {}) =>
     request(`/parents?q=${encodeURIComponent(q)}&limit=${limit}&offset=${offset}`),
   parent: (id) => request(`/parents/${id}`),
   lookups: () => request('/lookups'),
   updateParent: (id, body) => request(`/parents/${id}`, { method: 'PATCH', body }),
+  mobilePreview: (id) => request(`/parents/${id}/mobile-preview`),
+  changeMobile: (id, mobile, confirm) =>
+    request(`/parents/${id}/mobile`, { method: 'POST', body: { mobile, confirm } }),
   addStudent: (parentId, body) => request(`/parents/${parentId}/students`, { method: 'POST', body }),
   updateStudent: (id, body) => request(`/students/${id}`, { method: 'PATCH', body }),
   studentQuizzes: (id) => request(`/students/${id}/quizzes`),

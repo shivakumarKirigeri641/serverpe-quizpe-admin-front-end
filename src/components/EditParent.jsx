@@ -1,10 +1,14 @@
 /**
- * Edit a parent's own details.
+ * Edit a parent's details, including a guarded mobile-number change.
  *
- * The mobile number is intentionally not editable: it is the account identity
- * across WhatsApp sessions, consents, notification logs and invoices. Changing
- * it would orphan all of that. If a parent genuinely changes number, they
- * should sign up again — which also captures fresh consent.
+ * The number is the account identity — WhatsApp sessions, message history,
+ * consents, OTPs and every pending link key off it — so changing it re-links
+ * all of those in one transaction rather than editing a single column. The
+ * panel shows exactly how many rows will move before you commit.
+ *
+ * The WhatsApp display name cannot be fetched: Meta only sends it on an
+ * inbound message. It is captured automatically the next time that number
+ * writes in, and the form says so rather than pretending otherwise.
  */
 
 import { useState } from 'react';
@@ -21,6 +25,25 @@ export default function EditParent({ parent, onSaved }) {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [mob, setMob] = useState(false);
+  const [mobInfo, setMobInfo] = useState(null);
+  const [newMob, setNewMob] = useState('');
+  const [confMob, setConfMob] = useState('');
+  const [mobErr, setMobErr] = useState('');
+
+  const loadMobPreview = () =>
+    api.mobilePreview(parent.id).then(setMobInfo).catch((e) => setMobErr(e.message));
+
+  const doMobile = async () => {
+    setBusy(true); setMobErr('');
+    try {
+      await api.changeMobile(parent.id, newMob, confMob);
+      setMob(false); setNewMob(''); setConfMob('');
+      setOpen(false);
+      onSaved();
+    } catch (e) { setMobErr(e.message); }
+    finally { setBusy(false); }
+  };
 
   const save = async () => {
     setBusy(true); setError('');
@@ -54,10 +77,51 @@ export default function EditParent({ parent, onSaved }) {
                      onChange={(e) => setF({ ...f, parent_name: e.target.value })} />
 
               <label className="block text-[11px] font-bold text-muted mb-1">Mobile</label>
-              <input className="input mb-1 bg-line/30" value={parent.parent_mobile_number} readOnly />
-              <p className="text-[11px] text-muted mb-3">
-                Not editable — it identifies the account across WhatsApp, consents and invoices.
-              </p>
+              <div className="flex gap-2 mb-1">
+                <input className="input bg-line/30" value={parent.parent_mobile_number} readOnly />
+                <button type="button" className="btn-sec shrink-0"
+                        onClick={() => { setMob(!mob); if (!mob) loadMobPreview(); }}>
+                  {mob ? 'Cancel' : 'Change'}
+                </button>
+              </div>
+
+              {mob && (
+                <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-3 mb-3">
+                  <p className="text-[11px] text-amber-900 font-semibold mb-2">
+                    Changing the number moves this parent's whole history onto it.
+                  </p>
+                  {mobInfo && (
+                    <ul className="text-[11px] text-amber-900 mb-2 space-y-0.5">
+                      {Object.entries(mobInfo.counts || {}).map(([t, n]) => (
+                        <li key={t}>• {n} row(s) in {t.replace(/_/g, ' ')}</li>
+                      ))}
+                      {!Object.keys(mobInfo.counts || {}).length && <li>• nothing linked yet</li>}
+                      {mobInfo.frozen?.gstr1_filing > 0 && (
+                        <li className="font-bold mt-1">
+                          • {mobInfo.frozen.gstr1_filing} GST record(s) keep the OLD number — a filed
+                          return must not be rewritten
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                  <input className="input mb-2" inputMode="numeric" maxLength={10}
+                         placeholder="New 10-digit number" value={newMob}
+                         onChange={(e) => setNewMob(e.target.value.replace(/\D/g, ''))} />
+                  <input className="input mb-2" inputMode="numeric" maxLength={10}
+                         placeholder="Type it again to confirm" value={confMob}
+                         onChange={(e) => setConfMob(e.target.value.replace(/\D/g, ''))} />
+                  {mobErr && <p className="text-[11px] text-red-700 font-semibold mb-2">{mobErr}</p>}
+                  <button type="button" className="btn-pri w-full text-xs py-2"
+                          disabled={newMob.length !== 10 || newMob !== confMob || busy}
+                          onClick={doMobile}>
+                    Move account to {newMob || '…'}
+                  </button>
+                  <p className="text-[11px] text-amber-800 mt-2">
+                    The WhatsApp name can't be looked up — Meta only sends it when the person
+                    messages. It will fill in automatically the next time this number writes in.
+                  </p>
+                </div>
+              )}
 
               <label className="block text-[11px] font-bold text-muted mb-1">State code</label>
               <input className="input mb-4" value={f.state_code} maxLength={2}
