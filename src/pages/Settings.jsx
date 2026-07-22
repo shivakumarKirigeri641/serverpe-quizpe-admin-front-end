@@ -13,6 +13,8 @@ import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import { Page, Loading, ErrorBox, Pill } from '../components/ui.jsx';
 import ConfirmSave from '../components/ConfirmSave.jsx';
+import PaymentMode from '../components/PaymentMode.jsx';
+import AdminUsers from '../components/AdminUsers.jsx';
 
 const TABLES = [
   { name: 'quizpe_plans', label: 'Plans' },
@@ -32,6 +34,9 @@ export default function Settings() {
   const [edits, setEdits] = useState({});
   const [pending, setPending] = useState(null);   // row awaiting confirmation
   const [toast, setToast] = useState('');
+  const [isSuper, setIsSuper] = useState(false);
+
+  useEffect(() => { api.me().then((m) => setIsSuper(!!m.super)).catch(() => {}); }, []);
 
   const load = () => {
     setError(''); setEdits({});
@@ -82,6 +87,12 @@ export default function Settings() {
 
   return (
     <Page title="Settings" subtitle="Reference data and system status">
+      {isSuper && (
+        <div className="grid gap-5 mb-5 lg:grid-cols-2">
+          <PaymentMode />
+          <AdminUsers />
+        </div>
+      )}
       {system && (
         <div className="grid sm:grid-cols-4 gap-4 mb-5">
           <div className="card p-4">

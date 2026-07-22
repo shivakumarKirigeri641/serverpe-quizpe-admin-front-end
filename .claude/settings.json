@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -m 15 -w \"\\\\nHTTP %{http_code} in %{time_total}s\\\\n\" http://api.quizpe.in:5008/public/plans)",
+      "Bash(curl -s -m 12 -k -w \"\\\\nHTTP %{http_code} in %{time_total}s\\\\n\" https://api.quizpe.in:5008/public/plans)",
+      "Bash(curl -s -m 12 -k -w \"\\\\nHTTP %{http_code} in %{time_total}s\\\\n\" https://api.quizpe.in/public/plans)"
+    ]
+  }
+}

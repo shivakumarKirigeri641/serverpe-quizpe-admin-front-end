@@ -97,6 +97,13 @@ export const api = {
   updateTicket: (id, status) => request(`/support/${id}`, { method: 'PATCH', body: { status } }),
 
   system: () => request('/system'),
+  paymentMode: () => request('/payment-mode'),
+  requestModeOtp: () => request('/payment-mode/request-otp', { method: 'POST', body: {} }),
+  setPaymentMode: (mode, otp) => request('/payment-mode', { method: 'PUT', body: { mode, otp } }),
+  admins: () => request('/admins'),
+  requestAdminOtp: (mobile) => request('/admins/request-otp', { method: 'POST', body: { mobile } }),
+  addAdmin: (mobile, otp) => request('/admins', { method: 'POST', body: { mobile, otp } }),
+  removeAdmin: (mobile) => request(`/admins/${mobile}`, { method: 'DELETE' }),
 
   waSessions: ({ q = '', limit = 25, offset = 0 } = {}) =>
     request(`/whatsapp/sessions?q=${encodeURIComponent(q)}&limit=${limit}&offset=${offset}`),
