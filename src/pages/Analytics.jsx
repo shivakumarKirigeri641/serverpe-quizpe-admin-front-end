@@ -8,6 +8,8 @@ import {
 } from 'recharts';
 import { api } from '../lib/api';
 import AttendanceChart from '../components/AttendanceChart.jsx';
+import BoardGradeChart from '../components/BoardGradeChart.jsx';
+import LaunchOfferCard from '../components/LaunchOfferCard.jsx';
 import { Page, Loading, ErrorBox, Pill, inr } from '../components/ui.jsx';
 
 const COLORS = ['#00a884', '#075e54', '#13b48f', '#f4a261', '#e76f51'];
@@ -68,6 +70,12 @@ export default function Analytics() {
         </motion.div>
 
         <div className="lg:col-span-2"><AttendanceChart days={14} /></div>
+
+        {/* Where the students are, and how each segment is doing. Full width —
+            ten grades across three boards needs the room to stay readable. */}
+        <div className="lg:col-span-2"><BoardGradeChart /></div>
+
+        <LaunchOfferCard />
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="card p-5">
           <h2 className="font-bold text-brand mb-4">Average score</h2>

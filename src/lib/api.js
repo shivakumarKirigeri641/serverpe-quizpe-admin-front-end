@@ -68,6 +68,8 @@ export const api = {
   cohort: (date) => request(`/analytics/cohort${date ? `?date=${date}` : ''}`),
   plans: () => request('/analytics/plans'),
   engagement: () => request('/analytics/engagement'),
+  boardGrade: (date) => request(`/analytics/board-grade${date ? `?date=${date}` : ''}`),
+  launchOffer: () => request('/analytics/launch-offer'),
   feed: (limit = 50) => request(`/feed?limit=${limit}`),
   tonight: () => request('/tonight'),
 
