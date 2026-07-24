@@ -11,8 +11,13 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import { Page, Loading, ErrorBox, Stat, inr } from '../components/ui.jsx';
+import MoneyView from '../components/MoneyView.jsx';
 
 export default function Finance() {
+  // Two lenses on the same money: "Money view" answers what is mine to take;
+  // "GST & invoices" answers what I file. They live behind a tab so the
+  // compliance detail never buries the number the founder checks daily.
+  const [tab, setTab] = useState('money');
   const [invoices, setInvoices] = useState(null);
   const [gst, setGst] = useState(null);
   const [period, setPeriod] = useState('');
@@ -39,17 +44,26 @@ export default function Finance() {
     URL.revokeObjectURL(a.href);
   };
 
-  if (error) return <ErrorBox error={error} onRetry={load} />;
-  if (!invoices || !gst) return <Loading label="Loading finance…" />;
-
-  const t = gst.totals || {};
+  const t = gst?.totals || {};
   const invHead = ['Invoice', 'Date', 'Parent', 'State', 'Plan', 'Taxable', 'CGST', 'SGST', 'IGST', 'Total'];
+
+  const Tabs = (
+    <div className="flex gap-1 mb-5">
+      {[['money', '💰 Money view'], ['gst', '🧾 GST & invoices']].map(([k, label]) => (
+        <button key={k} onClick={() => setTab(k)}
+                className={`text-sm px-3 py-1.5 rounded-lg font-semibold transition ${
+                  tab === k ? 'bg-brand text-white' : 'text-muted hover:bg-slate-100'}`}>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <Page
-      title="Finance & GST"
-      subtitle="Invoice ledger and GSTR-1 ready figures"
-      actions={
+      title="Finance"
+      subtitle={tab === 'money' ? 'Turnover, GST and what is yours to withdraw' : 'Invoice ledger and GSTR-1 ready figures'}
+      actions={tab === 'gst' && gst ? (
         <div className="flex gap-2 items-center">
           <select className="input max-w-[10rem]" value={period} onChange={(e) => setPeriod(e.target.value)}>
             {(gst.periods?.length ? gst.periods : [gst.period]).map((p) => (
@@ -60,8 +74,14 @@ export default function Finance() {
             ⬇ Export CSV
           </button>
         </div>
-      }
+      ) : null}
     >
+      {Tabs}
+      {tab === 'money' && <MoneyView />}
+      {tab === 'gst' && error && <ErrorBox error={error} onRetry={load} />}
+      {tab === 'gst' && !error && (!invoices || !gst) && <Loading label="Loading GST data…" />}
+      {tab === 'gst' && !error && invoices && gst && (
+      <>
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
         <Stat index={0} label="Invoices" value={t.invoices || 0} sub={gst.period} />
         <Stat index={1} label="Taxable value" value={inr(t.taxable)} />
@@ -114,6 +134,8 @@ export default function Finance() {
           </table>
         </div>
       </div>
+      </>
+      )}
     </Page>
   );
 }

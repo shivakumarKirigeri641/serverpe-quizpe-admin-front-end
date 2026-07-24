@@ -56,7 +56,7 @@ export default function LaunchOfferCard() {
       <p className="text-[11px] text-muted mt-1.5">
         {o.taken} student{o.taken === 1 ? '' : 's'} enrolled at launch pricing
         {!done && o.remaining <= 10 && (
-          <b className="text-rose-600"> · only {o.remaining} left, prices rise after this</b>
+          <b className="text-amber-700"> · only {o.remaining} left, prices rise after this</b>
         )}
       </p>
     </div>

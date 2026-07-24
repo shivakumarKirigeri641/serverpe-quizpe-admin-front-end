@@ -91,6 +91,11 @@ export const api = {
 
   invoices: (limit = 100) => request(`/finance/invoices?limit=${limit}`),
   gstr1: (period) => request(`/finance/gstr1${period ? `?period=${period}` : ''}`),
+  financeSummary: () => request('/finance/summary'),
+  financeMonthly: (months = 12) => request(`/finance/monthly?months=${months}`),
+  expenses: (limit = 100) => request(`/finance/expenses?limit=${limit}`),
+  addExpense: (body) => request('/finance/expenses', { method: 'POST', body }),
+  removeExpense: (id) => request(`/finance/expenses/${id}`, { method: 'DELETE' }),
 
   table: (name) => request(`/tables/${name}`),
   updateRow: (name, id, patch) => request(`/tables/${name}/${id}`, { method: 'PATCH', body: patch }),
