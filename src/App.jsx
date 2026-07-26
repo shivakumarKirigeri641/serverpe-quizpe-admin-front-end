@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState, createContext, useContext } from 'react';
-import { Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api, getToken, setToken, clearToken, setUnauthorizedHandler } from './lib/api';
 
@@ -50,7 +50,13 @@ const NAV = [
 export default function App() {
   const [authed, setAuthed] = useState(!!getToken());
   const [brand, setBrand] = useState({ business: {}, logos: {} });
+  const [navOpen, setNavOpen] = useState(false);   // mobile drawer
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Close the mobile drawer whenever the route changes, so a tap on a nav item
+  // navigates AND dismisses the overlay in one gesture.
+  useEffect(() => { setNavOpen(false); }, [location.pathname]);
 
   useEffect(() => {
     setUnauthorizedHandler(() => { setAuthed(false); navigate('/login'); });
@@ -81,15 +87,16 @@ export default function App() {
   return (
     <Brand.Provider value={brand}>
       <div className="min-h-screen flex">
-        <Sidebar onSignOut={signOut} />
+        <Sidebar onSignOut={signOut} open={navOpen} onClose={() => setNavOpen(false)} />
         <main className="flex-1 min-w-0">
+          <MobileBar brand={brand} onMenu={() => setNavOpen(true)} />
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, ease: [0.22, 0.9, 0.28, 1] }}
-              className="p-6 max-w-[1600px] mx-auto"
+              className="p-4 sm:p-6 max-w-[1600px] mx-auto"
             >
               <Routes>
                 <Route path="/" element={<Dashboard />} />
@@ -116,11 +123,45 @@ export default function App() {
   );
 }
 
-function Sidebar({ onSignOut }) {
+/** Compact top bar shown only below `lg`: a hamburger and the product name. */
+function MobileBar({ brand, onMenu }) {
+  const { business, logos } = brand;
+  return (
+    <header className="lg:hidden sticky top-0 z-20 flex items-center gap-3 bg-brand text-white px-4 h-14 shadow-card">
+      <button onClick={onMenu} aria-label="Open menu"
+        className="grid place-items-center w-9 h-9 rounded-lg hover:bg-white/10 -ml-1">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
+        </svg>
+      </button>
+      {logos?.['logo-mark'] && (
+        <img src={logos['logo-mark']} alt="" className="w-8 h-8 rounded-lg bg-white p-0.5" />
+      )}
+      <span className="font-bold">{business?.product_name || 'QuizPe'}</span>
+    </header>
+  );
+}
+
+function Sidebar({ onSignOut, open, onClose }) {
   const { business, logos } = useBrand();
   return (
-    <aside className="w-60 shrink-0 bg-brand text-white/90 min-h-screen sticky top-0 flex flex-col">
+    <>
+      {/* dimmed backdrop — mobile only, only while the drawer is open */}
+      {open && (
+        <div className="lg:hidden fixed inset-0 z-30 bg-black/40" onClick={onClose} aria-hidden />
+      )}
+      <aside className={`bg-brand text-white/90 min-h-screen flex flex-col w-64 shrink-0
+        fixed inset-y-0 left-0 z-40 transform transition-transform duration-200
+        lg:sticky lg:top-0 lg:z-auto lg:w-60 lg:translate-x-0
+        ${open ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="p-5 flex items-center gap-3 border-b border-white/10">
+        {/* close button — mobile only */}
+        <button onClick={onClose} aria-label="Close menu"
+          className="lg:hidden grid place-items-center w-8 h-8 rounded-lg hover:bg-white/10 shrink-0 order-last ml-auto">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+          </svg>
+        </button>
         {logos['logo-mark'] && (
           <img src={logos['logo-mark']} alt="" className="w-10 h-10 rounded-xl bg-white p-1" />
         )}
@@ -151,5 +192,6 @@ function Sidebar({ onSignOut }) {
         </button>
       </div>
     </aside>
+    </>
   );
 }
