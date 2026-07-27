@@ -18,6 +18,7 @@ import { Page, Loading, ErrorBox, Pill } from '../components/ui.jsx';
 
 const TABS = [
   ['enquiries', '📥 Enquiries'],
+  ['visits', '🌐 Visitors'],
   ['testimonials', '⭐ Testimonials'],
   ['promotable', '💬 Ratings to publish'],
 ];
@@ -30,7 +31,8 @@ export default function Inbox() {
 
   const load = () => {
     setError(''); setData(null);
-    const fn = { enquiries: api.enquiries, testimonials: api.adminTestimonials, promotable: api.promotable }[tab];
+    const fn = { enquiries: api.enquiries, testimonials: api.adminTestimonials,
+                 promotable: api.promotable, visits: () => api.visitorsRecent(80) }[tab];
     fn().then(setData).catch((e) => setError(e.message));
   };
   useEffect(load, [tab]);
@@ -71,6 +73,7 @@ export default function Inbox() {
           )}
 
           {tab === 'enquiries' && <Enquiries rows={data.rows} act={act} busy={busy} />}
+          {tab === 'visits' && <Visitors data={data} reload={load} setError={setError} />}
           {tab === 'testimonials' && <Testimonials rows={data.rows} act={act} busy={busy} />}
           {tab === 'promotable' && <Promotable rows={data.rows} act={act} busy={busy} />}
         </>
@@ -189,6 +192,61 @@ function Promotable({ rows, act, busy }) {
         </motion.div>
       ))}
     </div>
+  );
+}
+
+/**
+ * Website visitors. The switch decides whether visits fill this Inbox at all —
+ * default on. Off keeps the Inbox quiet while the Visitors page keeps counting.
+ */
+function Visitors({ data, reload, setError }) {
+  const [saving, setSaving] = useState(false);
+  const on = data.inbox_on;
+  const toggle = async () => {
+    setSaving(true);
+    try { await api.setVisitorsInbox(!on); reload(); }
+    catch (e) { setError(e.message); }
+    finally { setSaving(false); }
+  };
+  return (
+    <>
+      <div className="card p-4 mb-4 flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="font-bold text-brand text-sm">Show website visits in this Inbox</p>
+          <p className="text-xs text-muted mt-0.5">
+            When on, every visit to quizpe.in appears below. Turn it off to keep the Inbox quiet —
+            visits are still counted on the <Link to="/visitors" className="text-brand-accent font-semibold">Visitors</Link> page.
+          </p>
+        </div>
+        <button onClick={toggle} disabled={saving} aria-pressed={on}
+                className={`relative w-12 h-7 rounded-full shrink-0 transition ${on ? 'bg-brand-accent' : 'bg-line'}`}>
+          <span className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : ''}`} />
+        </button>
+      </div>
+
+      {!on ? (
+        <Empty>Visitor feed is off. Turn the switch on to see visits here — they’re still tracked under Visitors.</Empty>
+      ) : !data.rows.length ? (
+        <Empty>No visits yet. They appear here as people open quizpe.in.</Empty>
+      ) : (
+        <div className="space-y-2">
+          {data.rows.map((v, i) => (
+            <motion.div key={v.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: Math.min(i * 0.02, 0.3) }}
+                        className="card p-3 flex items-center gap-3 text-sm">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${v.kind === 'wa_click' ? 'bg-emerald-500' : 'bg-sky-400'}`} />
+              <span className="font-semibold shrink-0">
+                {v.kind === 'wa_click' ? 'Tapped WhatsApp' : 'Viewed page'}
+              </span>
+              <span className="text-muted truncate">{v.path || '/'}</span>
+              <span className="text-xs text-muted ml-auto whitespace-nowrap">
+                {[v.city, v.country].filter(Boolean).join(', ') || '—'} · {v.at_ist}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 

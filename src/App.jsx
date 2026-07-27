@@ -28,6 +28,7 @@ import Questions from './pages/Questions.jsx';
 import Tonight from './pages/Tonight.jsx';
 import WhatsAppPage from './pages/WhatsApp.jsx';
 import Inbox from './pages/Inbox.jsx';
+import Visitors from './pages/Visitors.jsx';
 
 export const Brand = createContext({ business: {}, logos: {} });
 export const useBrand = () => useContext(Brand);
@@ -37,6 +38,7 @@ const NAV = [
   { to: '/tonight', label: 'Tonight (live)', icon: '🟢' },
   { to: '/live', label: 'Live activity', icon: '📡' },
   { to: '/analytics', label: 'Analytics', icon: '📈' },
+  { to: '/visitors', label: 'Visitors', icon: '🌐' },
   { to: '/parents', label: 'Parents & students', icon: '👨‍👩‍👧' },
   { to: '/whatsapp', label: 'Conversations', icon: '💬' },
   { to: '/questions', label: 'Question bank', icon: '❓' },
@@ -103,6 +105,7 @@ export default function App() {
                 <Route path="/tonight" element={<Tonight />} />
                 <Route path="/live" element={<LiveFeed />} />
                 <Route path="/analytics" element={<Analytics />} />
+                <Route path="/visitors" element={<Visitors />} />
                 <Route path="/parents" element={<Parents />} />
                 <Route path="/parents/:id" element={<ParentDetail />} />
                 <Route path="/quizzes/:trackerId" element={<QuizDetail />} />

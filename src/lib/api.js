@@ -117,6 +117,10 @@ export const api = {
   waThread: (id) => request(`/whatsapp/sessions/${id}`),
   waRaw: (id) => request(`/whatsapp/messages/${id}/raw`),
 
+  visitors: () => request('/visitors'),
+  visitorsRecent: (limit = 60) => request(`/visitors/recent?limit=${limit}`),
+  setVisitorsInbox: (inbox_on) => request('/visitors/settings', { method: 'PATCH', body: { inbox_on } }),
+
   enquiries: (status) => request(`/enquiries${status ? `?status=${status}` : ''}`),
   updateEnquiry: (id, status) => request(`/enquiries/${id}`, { method: 'PATCH', body: { status } }),
   adminTestimonials: () => request('/testimonials'),
