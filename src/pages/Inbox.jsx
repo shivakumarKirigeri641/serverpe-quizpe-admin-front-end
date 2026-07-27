@@ -233,15 +233,22 @@ function Visitors({ data, reload, setError }) {
           {data.rows.map((v, i) => (
             <motion.div key={v.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: Math.min(i * 0.02, 0.3) }}
-                        className="card p-3 flex items-center gap-3 text-sm">
-              <span className={`w-2 h-2 rounded-full shrink-0 ${v.kind === 'wa_click' ? 'bg-emerald-500' : 'bg-sky-400'}`} />
-              <span className="font-semibold shrink-0">
-                {v.kind === 'wa_click' ? 'Tapped WhatsApp' : 'Viewed page'}
-              </span>
-              <span className="text-muted truncate">{v.path || '/'}</span>
-              <span className="text-xs text-muted ml-auto whitespace-nowrap">
-                {[v.city, v.country].filter(Boolean).join(', ') || '—'} · {v.at_ist}
-              </span>
+                        className="card p-3">
+              <div className="flex items-center gap-3 text-sm">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${v.kind === 'wa_click' ? 'bg-emerald-500' : 'bg-sky-400'}`} />
+                <span className="font-semibold shrink-0">
+                  {v.kind === 'wa_click' ? '💬 Tapped WhatsApp' : 'Viewed page'}
+                </span>
+                <span className="text-muted truncate">{v.path || '/'}</span>
+                <span className="text-xs text-muted ml-auto whitespace-nowrap">{v.at_ist}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 pl-5 text-[11px] text-muted">
+                <span>🖥 {v.device || '—'}</span>
+                <span>📍 {[v.city, v.region, v.country].filter(Boolean).join(', ') || 'unknown'}</span>
+                <span>🌐 {v.ip || '—'}</span>
+                {v.referrer && <span>↩ {prettyRef(v.referrer)}</span>}
+                {v.session_id && <span className="font-mono">id: {v.session_id.slice(0, 8)}</span>}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -249,6 +256,11 @@ function Visitors({ data, reload, setError }) {
     </>
   );
 }
+
+const prettyRef = (s) => {
+  if (!s) return '';
+  try { return new URL(s).hostname.replace(/^www\./, ''); } catch { return s; }
+};
 
 const Empty = ({ children }) => (
   <div className="card p-12 text-center text-muted text-sm">{children}</div>
