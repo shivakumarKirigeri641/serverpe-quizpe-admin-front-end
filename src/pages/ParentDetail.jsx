@@ -12,6 +12,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import AddStudent from '../components/AddStudent.jsx';
+import EditStudent from '../components/EditStudent.jsx';
 import DangerZone from '../components/DangerZone.jsx';
 import EditParent from '../components/EditParent.jsx';
 import { Page, Loading, ErrorBox, Pill, inr } from '../components/ui.jsx';
@@ -115,7 +116,9 @@ export default function ParentDetail() {
                 className="w-full flex items-center gap-4 px-5 py-3 text-left hover:bg-line/20 transition"
               >
                 <span className={`transition-transform ${open === s.id ? 'rotate-90' : ''}`}>▶</span>
-                <span className="font-semibold flex-1">{s.student_name}</span>
+                <span className="font-semibold">{s.student_name}</span>
+                {s.is_active === false && <Pill tone="red">paused</Pill>}
+                <span className="flex-1" />
                 <span className="text-xs text-muted">{s.school_name || 'school not given'}</span>
                 <Pill tone="blue">{s.board_code} · {s.grade_name}</Pill>
                 <Pill tone="grey">{s.medium_code || '—'}</Pill>
@@ -159,6 +162,7 @@ export default function ParentDetail() {
                         </tbody>
                       </table>
                     )}
+                    <EditStudent student={s} onSaved={load} />
                     <div className="px-5 pb-4">
                       <DangerZone
                         kind="student" id={s.id} label={s.student_name}
