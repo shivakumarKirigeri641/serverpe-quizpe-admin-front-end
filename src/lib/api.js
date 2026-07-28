@@ -87,7 +87,8 @@ export const api = {
   quiz: (trackerId) => request(`/quizzes/${trackerId}`),
 
   reports: (limit = 50) => request(`/reports?limit=${limit}`),
-  reportDownloadUrl: (id) => `/admin/api/reports/${id}/download`,
+  reportDownloadUrl: (id) => `${API_BASE}/admin/api/reports/${id}/download`,
+  reportViewUrl: (id) => `${API_BASE}/admin/api/reports/${id}/view`,
 
   invoices: (limit = 100) => request(`/finance/invoices?limit=${limit}`),
   gstr1: (period) => request(`/finance/gstr1${period ? `?period=${period}` : ''}`),

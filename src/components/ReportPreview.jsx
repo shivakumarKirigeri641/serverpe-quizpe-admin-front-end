@@ -9,6 +9,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getToken, download, api } from '../lib/api';
+// Note: the /view fetch must go through api.reportViewUrl (which prepends
+// API_BASE) — a bare "/admin/api/..." would hit the panel's own host in
+// production (admin.quizpe.in) instead of the API host, and the PDF never loads.
 
 export default function ReportPreview({ report, onClose }) {
   const [url, setUrl] = useState(null);
@@ -19,7 +22,7 @@ export default function ReportPreview({ report, onClose }) {
     let revoked = false;
     let objectUrl = null;
 
-    fetch(`/admin/api/reports/${report.id}/view`, {
+    fetch(api.reportViewUrl(report.id), {
       headers: { Authorization: `Bearer ${getToken()}` },
     })
       .then(async (r) => {
