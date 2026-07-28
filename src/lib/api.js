@@ -26,11 +26,22 @@ export const clearToken = () => sessionStorage.removeItem(KEY);
 let onUnauthorized = () => {};
 export const setUnauthorizedHandler = (fn) => { onUnauthorized = fn; };
 
+// The Toaster registers here, so any write can raise a snackbar without each
+// page wiring one up.
+let onToast = () => {};
+export const setToastHandler = (fn) => { onToast = fn; };
+// Auth flows have their own on-screen feedback (codes, PIN) — a toast there is
+// noise, so they are excluded from the automatic snackbars.
+const isAuthPath = (p) => /\/(login|otp)\b|request-otp/.test(p);
+
 async function request(path, { method = 'GET', body, signal } = {}) {
   const headers = { Accept: 'application/json' };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body) headers['Content-Type'] = 'application/json';
+
+  // A write (anything but GET) that isn't an auth flow gets an automatic toast.
+  const toastable = method !== 'GET' && !isAuthPath(path);
 
   let res;
   try {
@@ -39,9 +50,11 @@ async function request(path, { method = 'GET', body, signal } = {}) {
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch {
-    throw new Error(API_BASE
+    const msg = API_BASE
       ? `Cannot reach the server at ${API_BASE}. Please check your connection.`
-      : 'Cannot reach the server. Is the back-end running on port 5008?');
+      : 'Cannot reach the server. Is the back-end running on port 5008?';
+    if (toastable) onToast({ type: 'error', message: msg });
+    throw new Error(msg);
   }
 
   if (res.status === 401) {
@@ -52,8 +65,11 @@ async function request(path, { method = 'GET', body, signal } = {}) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.success === false) {
-    throw new Error(data.error || `Request failed (${res.status})`);
+    const msg = data.error || `Request failed (${res.status})`;
+    if (toastable) onToast({ type: 'error', message: msg });
+    throw new Error(msg);
   }
+  if (toastable) onToast({ type: 'success', message: data.message || 'Saved' });
   return data;
 }
 
