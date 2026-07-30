@@ -10,6 +10,7 @@ import { api } from '../lib/api';
 import AttendanceChart from '../components/AttendanceChart.jsx';
 import BoardGradeChart from '../components/BoardGradeChart.jsx';
 import LaunchOfferCard from '../components/LaunchOfferCard.jsx';
+import { Funnel, Retention, ActivityCalendar } from '../components/AnalyticsViews.jsx';
 import { Page, Loading, ErrorBox, Pill, inr } from '../components/ui.jsx';
 
 const COLORS = ['#00a884', '#075e54', '#13b48f', '#f4a261', '#e76f51'];
@@ -51,6 +52,13 @@ export default function Analytics() {
         </div>
       }
     >
+      {/* At-a-glance data views (independent of the day selector) */}
+      <div className="mb-4"><ActivityCalendar /></div>
+      <div className="grid lg:grid-cols-2 gap-4 mb-4">
+        <Funnel />
+        <Retention />
+      </div>
+
       <div className="grid lg:grid-cols-2 gap-4">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card p-5">
           <h2 className="font-bold text-brand mb-4">Quizzes taken vs completed</h2>
