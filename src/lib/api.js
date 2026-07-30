@@ -150,6 +150,7 @@ export const api = {
   adminTestimonials: () => request('/testimonials'),
   updateTestimonial: (id, body) => request(`/testimonials/${id}`, { method: 'PATCH', body }),
   promotable: () => request('/feedback/promotable'),
+  feedbackAllRatings: () => request('/feedback/all'),
   promoteFeedback: (id) => request(`/feedback/${id}/promote`, { method: 'POST', body: {} }),
 
   activity: ({ limit = 60, since = null, kinds = null } = {}) => {

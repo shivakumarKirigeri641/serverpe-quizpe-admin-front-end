@@ -73,10 +73,10 @@ export default function Inbox() {
             </div>
           )}
 
-          {tab === 'enquiries' && <Enquiries rows={data.rows} act={act} busy={busy} />}
+          {tab === 'enquiries' && <><Enquiries rows={data.rows} act={act} busy={busy} /><EnquiriesTable rows={data.rows} /></>}
           {tab === 'visits' && <Visitors data={data} reload={load} setError={setError} />}
-          {tab === 'testimonials' && <Testimonials rows={data.rows} act={act} busy={busy} />}
-          {tab === 'promotable' && <Promotable rows={data.rows} act={act} busy={busy} />}
+          {tab === 'testimonials' && <><Testimonials rows={data.rows} act={act} busy={busy} /><TestimonialsTable rows={data.rows} /></>}
+          {tab === 'promotable' && <><Promotable rows={data.rows} act={act} busy={busy} /><AllRatingsTable /></>}
         </>
       )}
     </Page>
@@ -93,7 +93,7 @@ function Enquiries({ rows, act, busy }) {
           <div className="flex flex-wrap items-center gap-3 mb-2">
             <span className="font-mono text-sm font-bold text-brand">{e.ref_no}</span>
             <Pill tone={e.status === 'open' ? 'red' : e.status === 'handled' ? 'amber' : 'grey'}>{e.status}</Pill>
-            <span className="text-xs text-muted">{e.query_type.replace(/_/g, ' ')}</span>
+            <span className="text-xs text-muted">{(e.query_type || 'enquiry').replace(/_/g, ' ')}</span>
             <span className="text-xs text-muted ml-auto">{e.at_ist}</span>
           </div>
           <p className="text-sm whitespace-pre-wrap mb-3">{e.message}</p>
@@ -141,8 +141,12 @@ function Testimonials({ rows, act, busy }) {
             {t.author_role ? ` · ${t.author_role}` : ''}{t.location ? ` · ${t.location}` : ''}
           </p>
           <div className="flex gap-2 mt-3 pt-3 border-t border-line">
-            <button className="btn-pri text-xs py-1.5" disabled={busy === t.id}
-                    onClick={() => act(() => api.updateTestimonial(t.id, { is_approved: !t.is_approved }), t.id)}>
+            <button
+              className={`text-xs py-1.5 ${t.is_approved
+                ? 'btn text-white bg-red-600 hover:bg-red-700 border-red-600'
+                : 'btn-pri'}`}
+              disabled={busy === t.id}
+              onClick={() => act(() => api.updateTestimonial(t.id, { is_approved: !t.is_approved }), t.id)}>
               {t.is_approved ? 'Unpublish' : '✓ Approve & publish'}
             </button>
             <button className="btn-sec text-xs py-1.5 text-red-600 border-red-200" disabled={busy === t.id}
@@ -203,11 +207,19 @@ function Promotable({ rows, act, busy }) {
 function Visitors({ data, reload, setError }) {
   const [saving, setSaving] = useState(false);
   const [grouped, setGrouped] = useState(null);
+  const [page, setPage] = useState(0);
   const on = data.inbox_on;
 
   useEffect(() => {
     if (on) api.visitorsGrouped('all').then((d) => setGrouped(d.grouped)).catch(() => {});
   }, [on]);
+
+  // Client-side pagination — clamped so the 30s refresh never bumps the page.
+  const PAGE = 15;
+  const rows = data.rows || [];
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE));
+  const cur = Math.min(page, pages - 1);
+  const slice = rows.slice(cur * PAGE, cur * PAGE + PAGE);
   const toggle = async () => {
     setSaving(true);
     try { await api.setVisitorsInbox(!on); reload(); }
@@ -233,17 +245,17 @@ function Visitors({ data, reload, setError }) {
       {on && grouped && (
         <div className="mb-4">
           <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">Grouped by period</p>
-          <VisitorGroups grouped={grouped} />
+          <VisitorGroups grouped={grouped} variant="table" />
         </div>
       )}
 
       {!on ? (
         <Empty>Visitor feed is off. Turn the switch on to see visits here — they’re still tracked under Visitors.</Empty>
-      ) : !data.rows.length ? (
+      ) : !rows.length ? (
         <Empty>No visits yet. They appear here as people open quizpe.in.</Empty>
       ) : (
         <div className="space-y-2">
-          {data.rows.map((v, i) => (
+          {slice.map((v, i) => (
             <motion.div key={v.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: Math.min(i * 0.02, 0.3) }}
                         className="card p-3">
@@ -264,9 +276,162 @@ function Visitors({ data, reload, setError }) {
               </div>
             </motion.div>
           ))}
+          {pages > 1 && (
+            <div className="flex items-center justify-between pt-2 text-sm">
+              <span className="text-muted">{cur * PAGE + 1}–{Math.min((cur + 1) * PAGE, rows.length)} of {rows.length}</span>
+              <div className="flex gap-2 items-center">
+                <button className="btn-sec" disabled={cur === 0} onClick={() => setPage(cur - 1)}>← Previous</button>
+                <span className="text-muted">Page {cur + 1} / {pages}</span>
+                <button className="btn-sec" disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)}>Next →</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>
+  );
+}
+
+/* ---- "all items" grids shown under the action cards, with a Status column -- */
+function StatusFilter({ options, value, onChange }) {
+  return (
+    <div className="flex gap-1 flex-wrap">
+      {options.map(([key, label, n]) => (
+        <button key={key} onClick={() => onChange(key)}
+          className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
+            value === key ? 'bg-brand text-white border-brand' : 'bg-white border-line text-muted hover:text-ink'}`}>
+          {label}{n != null ? ` (${n})` : ''}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const hit = (q, ...vals) => !q || vals.some((v) => String(v ?? '').toLowerCase().includes(q.toLowerCase()));
+
+function SearchBox({ value, onChange }) {
+  return (
+    <input className="input text-xs py-1 max-w-[11rem]" placeholder="🔍 Search…"
+           value={value} onChange={(e) => onChange(e.target.value)} />
+  );
+}
+
+function GridBlock({ title, head, children, right }) {
+  return (
+    <div className="mt-5">
+      <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+        <p className="text-xs font-bold uppercase tracking-wide text-muted">{title}</p>
+        {right}
+      </div>
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead><tr>{head.map((h, i) => <th key={i} className="th">{h}</th>)}</tr></thead>
+            <tbody>{children}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const Empty2 = (n) => <tr><td className="td text-center text-muted" colSpan={n}>Nothing with that status.</td></tr>;
+
+function EnquiriesTable({ rows }) {
+  const [filter, setFilter] = useState('all');
+  const [q, setQ] = useState('');
+  if (!rows?.length) return null;
+  const tone = (s) => (s === 'open' ? 'red' : s === 'handled' ? 'amber' : 'grey');
+  const n = (s) => rows.filter((r) => r.status === s).length;
+  const opts = [['all', 'All', rows.length], ['open', 'Open', n('open')], ['handled', 'Handled', n('handled')], ['closed', 'Closed', n('closed')]];
+  const shown = rows.filter((r) => (filter === 'all' || r.status === filter)
+    && hit(q, r.ref_no, r.user_name, r.mobile_number, r.query_type, r.message, r.email));
+  return (
+    <GridBlock title="All enquiries" head={['Date', 'Ref', 'Name', 'Mobile', 'Type', 'Status']}
+               right={<div className="flex gap-2 items-center flex-wrap"><SearchBox value={q} onChange={setQ} /><StatusFilter options={opts} value={filter} onChange={setFilter} /></div>}>
+      {shown.map((e) => (
+        <tr key={e.id} className="hover:bg-line/30 transition">
+          <td className="td text-xs whitespace-nowrap text-muted">{e.at_ist}</td>
+          <td className="td font-mono text-xs">{e.ref_no}</td>
+          <td className="td text-xs font-semibold">{e.user_name}</td>
+          <td className="td text-xs">{e.mobile_number}</td>
+          <td className="td text-xs">{(e.query_type || 'enquiry').replace(/_/g, ' ')}</td>
+          <td className="td"><Pill tone={tone(e.status)}>{e.status}</Pill></td>
+        </tr>
+      ))}
+      {!shown.length && Empty2(6)}
+    </GridBlock>
+  );
+}
+
+function TestimonialsTable({ rows }) {
+  const [filter, setFilter] = useState('all');
+  const [q, setQ] = useState('');
+  if (!rows?.length) return null;
+  const st = (t) => (t.is_approved ? 'published' : 'pending');
+  const n = (s) => rows.filter((r) => st(r) === s).length;
+  const opts = [['all', 'All', rows.length], ['published', 'Published', n('published')], ['pending', 'Pending', n('pending')]];
+  const shown = rows.filter((r) => (filter === 'all' || st(r) === filter)
+    && hit(q, r.author_name, r.location, r.message, r.source));
+  return (
+    <GridBlock title="All testimonials" head={['Date', 'Author', 'Rating', 'Source', 'Status']}
+               right={<div className="flex gap-2 items-center flex-wrap"><SearchBox value={q} onChange={setQ} /><StatusFilter options={opts} value={filter} onChange={setFilter} /></div>}>
+      {shown.map((t) => (
+        <tr key={t.id} className="hover:bg-line/30 transition">
+          <td className="td text-xs whitespace-nowrap text-muted">{t.at_ist}</td>
+          <td className="td text-xs font-semibold">
+            {t.author_name}{t.location ? <span className="text-muted font-normal"> · {t.location}</span> : ''}
+          </td>
+          <td className="td text-brand-accent text-xs whitespace-nowrap">{'★'.repeat(t.rating || 0)}</td>
+          <td className="td text-xs">{t.source || '—'}</td>
+          <td className="td"><Pill tone={t.is_approved ? 'green' : 'amber'}>{t.is_approved ? 'published' : 'pending'}</Pill></td>
+        </tr>
+      ))}
+      {!shown.length && Empty2(5)}
+    </GridBlock>
+  );
+}
+
+const RATING_STATUS = {
+  published: ['green', 'Published'], pending: ['amber', 'Draft (pending)'],
+  publishable: ['blue', 'Ready to publish'], not_eligible: ['grey', 'Not eligible'],
+};
+function AllRatingsTable() {
+  const [rows, setRows] = useState(null);
+  const [filter, setFilter] = useState('all');
+  const [q, setQ] = useState('');
+  useEffect(() => { api.feedbackAllRatings().then((d) => setRows(d.rows)).catch(() => setRows([])); }, []);
+  if (!rows?.length) return null;
+  const n = (s) => rows.filter((r) => r.status === s).length;
+  const opts = [
+    ['all', 'All', rows.length],
+    ['publishable', 'Ready', n('publishable')],
+    ['pending', 'Draft', n('pending')],
+    ['published', 'Published', n('published')],
+    ['not_eligible', 'Not eligible', n('not_eligible')],
+  ];
+  const shown = rows.filter((r) => (filter === 'all' || r.status === filter)
+    && hit(q, r.parent_name, r.student_name, r.message, r.state_code));
+  return (
+    <GridBlock title="All ratings" head={['Date', 'Parent', 'Child', 'Rating', 'Comment', 'Status']}
+               right={<div className="flex gap-2 items-center flex-wrap"><SearchBox value={q} onChange={setQ} /><StatusFilter options={opts} value={filter} onChange={setFilter} /></div>}>
+      {shown.map((f) => {
+        const [tone, label] = RATING_STATUS[f.status] || ['grey', f.status];
+        return (
+          <tr key={f.id} className="hover:bg-line/30 transition">
+            <td className="td text-xs whitespace-nowrap text-muted">{f.at_ist}</td>
+            <td className="td text-xs font-semibold">
+              {f.parent_name}{f.state_code ? <span className="text-muted font-normal"> · {f.state_code}</span> : ''}
+            </td>
+            <td className="td text-xs">{f.student_name || '—'}</td>
+            <td className="td text-brand-accent text-xs whitespace-nowrap">{'★'.repeat(f.rating || 0)}</td>
+            <td className="td text-xs text-muted max-w-[16rem] truncate">{f.message || '—'}</td>
+            <td className="td"><Pill tone={tone}>{label}</Pill></td>
+          </tr>
+        );
+      })}
+      {!shown.length && Empty2(6)}
+    </GridBlock>
   );
 }
 

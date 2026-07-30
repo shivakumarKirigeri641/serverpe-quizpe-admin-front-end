@@ -113,15 +113,36 @@ export default function Settings() {
           </div>
           <div className="card p-4">
             <div className="text-[11px] uppercase font-bold text-muted">Templates</div>
-            <div className="mt-1 space-y-0.5">
-              {system.templates.map((t) => (
-                <div key={t.template_name} className="flex items-center gap-1.5 text-[11px]">
-                  <Pill tone={t.approval_status === 'APPROVED' ? 'green' : 'amber'}>
-                    {t.approval_status}
-                  </Pill>
-                  <span className="truncate">{t.template_name}</span>
-                </div>
-              ))}
+            <div className="text-xl font-bold text-brand mt-1">
+              {system.templates.filter((t) => t.approval_status === 'APPROVED').length}
+              <span className="text-sm text-muted font-semibold"> / {system.templates.length} approved</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp templates — a readable table instead of a cramped card list */}
+      {system?.templates?.length > 0 && (
+        <div className="mb-5">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">WhatsApp templates</p>
+          <div className="card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead><tr>{['Template', 'Status', 'Used for'].map((h) => <th key={h} className="th">{h}</th>)}</tr></thead>
+                <tbody>
+                  {system.templates.map((t) => (
+                    <tr key={t.template_name} className="hover:bg-line/30 transition">
+                      <td className="td font-mono text-xs">{t.template_name}</td>
+                      <td className="td">
+                        <Pill tone={t.approval_status === 'APPROVED' ? 'green' : t.approval_status === 'PENDING' ? 'amber' : 'grey'}>
+                          {t.approval_status}
+                        </Pill>
+                      </td>
+                      <td className="td text-xs text-muted">{t.send_context || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
