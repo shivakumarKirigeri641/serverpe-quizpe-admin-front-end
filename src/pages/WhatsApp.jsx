@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import { Page, Loading, ErrorBox, Pill } from '../components/ui.jsx';
+import VisitorGroups from '../components/VisitorGroups.jsx';
 
 const TYPE_ICON = {
   text: '💬', interactive: '🔘', button: '👆', image: '🖼️', document: '📄',
@@ -33,7 +34,14 @@ export default function WhatsAppPage() {
   const [error, setError] = useState('');
   const [open, setOpen] = useState(null);
   const [thread, setThread] = useState({});
+  const [grouped, setGrouped] = useState(null);
   const LIMIT = 25;
+
+  // WhatsApp chats carry no geo/IP; the closest signal is the "Start on
+  // WhatsApp" taps on quizpe.in that precede a conversation — grouped by period.
+  useEffect(() => {
+    api.visitorsGrouped('wa_click').then((d) => setGrouped(d.grouped)).catch(() => {});
+  }, []);
 
   const load = () => {
     setError('');
@@ -71,6 +79,16 @@ export default function WhatsAppPage() {
         : !rows ? <Loading label="Loading conversations…" />
           : (
             <>
+              {grouped && (
+                <div className="mb-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h2 className="font-bold text-brand text-sm">WhatsApp intent — “Start on WhatsApp” taps</h2>
+                    <span className="text-[11px] text-muted">from quizpe.in · IP / device / place / state, grouped by period</span>
+                  </div>
+                  <VisitorGroups grouped={grouped} showWa={false} />
+                </div>
+              )}
+
               <div className="card overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">

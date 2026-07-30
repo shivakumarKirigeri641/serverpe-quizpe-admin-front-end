@@ -79,6 +79,8 @@ export const api = {
   me: () => request('/me'),
 
   dashboard: () => request('/dashboard'),
+  briefing: () => request('/briefing'),
+  celebrations: () => request('/celebrations'),
   daily: (days = 30) => request(`/analytics/daily?days=${days}`),
   participation: (days = 30) => request(`/analytics/participation?days=${days}`),
   cohort: (date) => request(`/analytics/cohort${date ? `?date=${date}` : ''}`),
@@ -136,6 +138,8 @@ export const api = {
 
   visitors: () => request('/visitors'),
   visitorsRecent: (limit = 60) => request(`/visitors/recent?limit=${limit}`),
+  visitorsGrouped: (kind = 'all') => request(`/visitors/grouped?kind=${kind}`),
+  visitorsGeo: () => request('/visitors/geo'),
   setVisitorsInbox: (inbox_on) => request('/visitors/settings', { method: 'PATCH', body: { inbox_on } }),
 
   enquiries: (status) => request(`/enquiries${status ? `?status=${status}` : ''}`),

@@ -14,6 +14,8 @@ import {
 import { api } from '../lib/api';
 import { Page, Stat, Loading, ErrorBox, Pill, inr } from '../components/ui.jsx';
 import CohortHealth from '../components/CohortHealth.jsx';
+import Briefing from '../components/Briefing.jsx';
+import { Celebrations } from '../components/Celebrate.jsx';
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
@@ -35,6 +37,8 @@ export default function Dashboard() {
 
   return (
     <Page title="Dashboard" subtitle="Live figures from the QuizPe database">
+      <Briefing />
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <Stat index={0} label="Quizzes today" value={c.quizzes.today.now}
               delta={c.quizzes.today.delta} sub={`vs ${c.quizzes.today.was} yesterday`} />
@@ -57,6 +61,8 @@ export default function Dashboard() {
         <Stat index={7} label="Lifetime revenue" value={inr(o.revenue_total)}
               sub={`${o.questions_total.toLocaleString('en-IN')} questions in bank`} />
       </div>
+
+      <Celebrations />
 
       <div className="grid lg:grid-cols-3 gap-4">
         <motion.div

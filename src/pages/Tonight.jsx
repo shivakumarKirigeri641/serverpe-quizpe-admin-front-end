@@ -95,8 +95,12 @@ export default function Tonight() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {sorted.map((r, i) => {
           const st = STATE[r.state] || STATE.waiting;
-          const total = r.question_count || r.score_total || 10;
-          const pct = r.state === 'in_progress' ? Math.round((r.answered / total) * 100) : null;
+          // Actual questions the parent gets = the number built into the quiz
+          // (built_count), which can be fewer than the planned question_count
+          // when not enough unseen questions exist. Fall back to score_total
+          // (from the report) or the planned count only before the quiz is built.
+          const total = r.built_count || r.score_total || r.question_count || 10;
+          const pct = r.state === 'in_progress' && total ? Math.round((r.answered / total) * 100) : null;
           return (
             <motion.div
               key={r.student_id}

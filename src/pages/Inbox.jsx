@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import { Page, Loading, ErrorBox, Pill } from '../components/ui.jsx';
+import VisitorGroups from '../components/VisitorGroups.jsx';
 
 const TABS = [
   ['enquiries', '📥 Enquiries'],
@@ -201,7 +202,12 @@ function Promotable({ rows, act, busy }) {
  */
 function Visitors({ data, reload, setError }) {
   const [saving, setSaving] = useState(false);
+  const [grouped, setGrouped] = useState(null);
   const on = data.inbox_on;
+
+  useEffect(() => {
+    if (on) api.visitorsGrouped('all').then((d) => setGrouped(d.grouped)).catch(() => {});
+  }, [on]);
   const toggle = async () => {
     setSaving(true);
     try { await api.setVisitorsInbox(!on); reload(); }
@@ -224,6 +230,13 @@ function Visitors({ data, reload, setError }) {
         </button>
       </div>
 
+      {on && grouped && (
+        <div className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">Grouped by period</p>
+          <VisitorGroups grouped={grouped} />
+        </div>
+      )}
+
       {!on ? (
         <Empty>Visitor feed is off. Turn the switch on to see visits here — they’re still tracked under Visitors.</Empty>
       ) : !data.rows.length ? (
@@ -244,7 +257,7 @@ function Visitors({ data, reload, setError }) {
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 pl-5 text-[11px] text-muted">
                 <span>🖥 {v.device || '—'}</span>
-                <span>📍 {[v.city, v.region, v.country].filter(Boolean).join(', ') || 'unknown'}</span>
+                <span>📍 {[v.city, v.state || v.region, v.country].filter(Boolean).join(', ') || 'unknown'}</span>
                 <span>🌐 {v.ip || '—'}</span>
                 {v.referrer && <span>↩ {prettyRef(v.referrer)}</span>}
                 {v.session_id && <span className="font-mono">id: {v.session_id.slice(0, 8)}</span>}

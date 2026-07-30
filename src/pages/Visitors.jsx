@@ -8,6 +8,8 @@
  */
 import { useEffect, useState } from 'react';
 import { Page, Loading, ErrorBox, Stat } from '../components/ui.jsx';
+import VisitorGroups from '../components/VisitorGroups.jsx';
+import IndiaHeat from '../components/IndiaHeat.jsx';
 import { api } from '../lib/api';
 
 const fmtDay = (d) => {
@@ -17,11 +19,19 @@ const fmtDay = (d) => {
 
 export default function Visitors() {
   const [a, setA] = useState(null);
+  const [grouped, setGrouped] = useState(null);
+  const [recent, setRecent] = useState(null);
+  const [geo, setGeo] = useState(null);
   const [error, setError] = useState('');
 
-  const load = () => api.visitors()
-    .then((d) => { setA(d.analytics); setError(''); })
-    .catch((e) => setError(e.message));
+  // Core analytics decides the page; the extra panels each fail on their own so
+  // one bad query can never blank the whole page.
+  const load = () => {
+    api.visitors().then((an) => { setA(an.analytics); setError(''); }).catch((e) => setError(e.message));
+    api.visitorsGrouped('all').then((d) => setGrouped(d.grouped)).catch(() => setGrouped(null));
+    api.visitorsRecent(120).then((d) => setRecent(d.rows)).catch(() => setRecent([]));
+    api.visitorsGeo().then((d) => setGeo(d.geo)).catch(() => setGeo(null));
+  };
 
   useEffect(() => {
     load();
@@ -93,7 +103,53 @@ export default function Visitors() {
           </div>
         </div>
       </div>
+
+      {/* India heatmap — where visitors and families are */}
+      <h2 className="font-bold text-brand mt-6 mb-3">India heatmap · by state / UT</h2>
+      <IndiaHeat geo={geo} />
+
+      {/* Grouped by time — device / state·UT / place / country breakdowns */}
+      <h2 className="font-bold text-brand mt-6 mb-3">Visitors by period</h2>
+      {grouped ? <VisitorGroups grouped={grouped} /> : <div className="card p-6 text-sm text-muted">Loading…</div>}
+
+      {/* Every recent visit with its full detail */}
+      <h2 className="font-bold text-brand mt-6 mb-3">Recent visitors</h2>
+      <VisitorTable rows={recent} />
     </Page>
+  );
+}
+
+/** Detailed per-visit table: time, kind, device, place, state/UT, country, IP. */
+function VisitorTable({ rows }) {
+  if (!rows) return <div className="card p-6 text-sm text-muted">Loading…</div>;
+  if (!rows.length) return <div className="card p-8 text-center text-sm text-muted">No visits recorded yet.</div>;
+  const head = ['When', 'Action', 'Device', 'Place', 'State / UT', 'Country', 'IP address', 'Came via'];
+  return (
+    <div className="card overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead><tr>{head.map((h, i) => <th key={i} className="th">{h}</th>)}</tr></thead>
+          <tbody>
+            {rows.map((v) => (
+              <tr key={v.id} className="hover:bg-line/30 transition">
+                <td className="td text-xs whitespace-nowrap text-muted">{v.at_ist}</td>
+                <td className="td">
+                  <span className={`pill ${v.kind === 'wa_click' ? 'bg-emerald-50 text-emerald-700' : 'bg-sky-50 text-sky-700'}`}>
+                    {v.kind === 'wa_click' ? '💬 WhatsApp' : 'View'}
+                  </span>
+                </td>
+                <td className="td text-xs">{v.device || '—'}</td>
+                <td className="td text-xs">{v.city || '—'}</td>
+                <td className="td text-xs">{v.state || '—'}</td>
+                <td className="td text-xs">{v.country || '—'}</td>
+                <td className="td text-xs font-mono">{v.ip || '—'}</td>
+                <td className="td text-xs text-muted max-w-[12rem] truncate">{prettyRef(v.referrer) || 'direct'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 

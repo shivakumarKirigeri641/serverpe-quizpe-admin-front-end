@@ -30,6 +30,8 @@ import WhatsAppPage from './pages/WhatsApp.jsx';
 import Inbox from './pages/Inbox.jsx';
 import Visitors from './pages/Visitors.jsx';
 import Toaster from './components/Toaster.jsx';
+import CommandPalette from './components/CommandPalette.jsx';
+import { PaymentCelebrator } from './components/Celebrate.jsx';
 
 export const Brand = createContext({ business: {}, logos: {} });
 export const useBrand = () => useContext(Brand);
@@ -90,6 +92,8 @@ export default function App() {
   return (
     <Brand.Provider value={brand}>
       <Toaster />
+      <CommandPalette />
+      <PaymentCelebrator />
       <div className="min-h-screen flex">
         <Sidebar onSignOut={signOut} open={navOpen} onClose={() => setNavOpen(false)} />
         <main className="flex-1 min-w-0">
