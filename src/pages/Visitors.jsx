@@ -110,7 +110,7 @@ export default function Visitors() {
 
       {/* Grouped by time — device / state·UT / place / country breakdowns */}
       <h2 className="font-bold text-brand mt-6 mb-3">Visitors by period</h2>
-      {grouped ? <VisitorGroups grouped={grouped} /> : <div className="card p-6 text-sm text-muted">Loading…</div>}
+      {grouped ? <VisitorGroups grouped={grouped} variant="table" /> : <div className="card p-6 text-sm text-muted">Loading…</div>}
 
       {/* Every recent visit with its full detail */}
       <h2 className="font-bold text-brand mt-6 mb-3">Recent visitors</h2>

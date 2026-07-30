@@ -85,7 +85,7 @@ export default function WhatsAppPage() {
                     <h2 className="font-bold text-brand text-sm">WhatsApp intent — “Start on WhatsApp” taps</h2>
                     <span className="text-[11px] text-muted">from quizpe.in · IP / device / place / state, grouped by period</span>
                   </div>
-                  <VisitorGroups grouped={grouped} showWa={false} />
+                  <VisitorGroups grouped={grouped} showWa={false} variant="table" />
                 </div>
               )}
 

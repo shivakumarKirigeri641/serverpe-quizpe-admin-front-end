@@ -55,8 +55,39 @@ function BucketCard({ b, showWa, i }) {
   );
 }
 
-export default function VisitorGroups({ grouped, showWa = true }) {
+/** Top entry of a breakdown, as "Name (n)", or an em-dash when empty. */
+const top = (items) => (items?.length ? `${items[0].name} (${items[0].n})` : '—');
+
+function BucketTable({ buckets, showWa }) {
+  const head = ['Period', 'Taps', 'Unique', 'IPs', 'Top device', 'Top state / UT', 'Top place', 'Top country'];
+  return (
+    <div className="card overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead><tr>{head.map((h, i) => <th key={i} className="th">{h}</th>)}</tr></thead>
+          <tbody>
+            {buckets.map((b) => (
+              <tr key={b.key} className={`hover:bg-line/30 transition ${b.total === 0 ? 'opacity-50' : ''}`}>
+                <td className="td font-semibold whitespace-nowrap">{b.label}</td>
+                <td className="td font-black text-ink">{b.total}</td>
+                <td className="td">{b.uniques}</td>
+                <td className="td">{b.unique_ips}</td>
+                <td className="td text-xs">{top(b.devices)}</td>
+                <td className="td text-xs">{top(b.states)}</td>
+                <td className="td text-xs">{top(b.places)}</td>
+                <td className="td text-xs">{top(b.countries)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export default function VisitorGroups({ grouped, showWa = true, variant = 'cards' }) {
   if (!grouped?.buckets) return null;
+  if (variant === 'table') return <BucketTable buckets={grouped.buckets} showWa={showWa} />;
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {grouped.buckets.map((b, i) => <BucketCard key={b.key} b={b} showWa={showWa} i={i} />)}
