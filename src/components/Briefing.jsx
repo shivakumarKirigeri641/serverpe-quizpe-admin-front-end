@@ -16,17 +16,6 @@ const greeting = () => {
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 };
 
-const wa = (mobile, text) =>
-  `https://wa.me/91${String(mobile).replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
-
-const trialText = (name, daysLeft) =>
-  `Hi ${name || 'there'}! Your child's QuizPe free trial ${daysLeft <= 0 ? 'ends today' : daysLeft === 1 ? 'ends tomorrow' : `ends in ${daysLeft} days`}. ` +
-  `To keep the daily quizzes going, you can continue from just ₹99 (about ₹3.50/day) at quizpe.in. Happy to help if you have any questions. 🙂`;
-
-const missedText = (parent, student) =>
-  `Hi ${parent || 'there'}! ${student || 'Your child'} missed last night's QuizPe quiz. ` +
-  `Tonight's is ready and takes only about 5 minutes — a small daily habit makes a big difference. 🙂`;
-
 export default function Briefing() {
   const [b, setB] = useState(null);
   const [err, setErr] = useState(false);
@@ -68,8 +57,7 @@ export default function Briefing() {
                 <Row key={t.parent_id}
                      to={`/parents/${t.parent_id}`}
                      name={t.parent_name || t.parent_mobile_number}
-                     note={t.days_left <= 0 ? 'ends today' : t.days_left === 1 ? 'ends tomorrow' : `ends in ${t.days_left} days`}
-                     href={wa(t.parent_mobile_number, trialText(t.parent_name, t.days_left))} />
+                     note={t.days_left <= 0 ? 'ends today' : t.days_left === 1 ? 'ends tomorrow' : `ends in ${t.days_left} days`} />
               ))}
             </Card>
           )}
@@ -80,8 +68,7 @@ export default function Briefing() {
                 <Row key={m.student_id}
                      to={`/parents/${m.parent_id}`}
                      name={m.student_name}
-                     note={m.parent_name || m.parent_mobile_number}
-                     href={wa(m.parent_mobile_number, missedText(m.parent_name, m.student_name))} />
+                     note={m.parent_name || m.parent_mobile_number} />
               ))}
             </Card>
           )}
@@ -119,17 +106,12 @@ function Card({ title, tone, children }) {
   );
 }
 
-function Row({ to, name, note, href }) {
+function Row({ to, name, note }) {
   return (
     <div className="flex items-center gap-2 text-sm">
       <Link to={to} className="min-w-0 flex-1 truncate font-semibold text-ink hover:text-brand-accent">
         {name} <span className="font-normal text-muted text-xs">· {note}</span>
       </Link>
-      <a href={href} target="_blank" rel="noopener noreferrer"
-         onClick={(e) => e.stopPropagation()}
-         className="shrink-0 pill bg-emerald-500 text-white hover:bg-emerald-600 transition">
-        💬 Nudge
-      </a>
     </div>
   );
 }
