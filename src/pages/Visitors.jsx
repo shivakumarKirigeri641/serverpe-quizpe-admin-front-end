@@ -29,7 +29,7 @@ export default function Visitors() {
   const load = () => {
     api.visitors().then((an) => { setA(an.analytics); setError(''); }).catch((e) => setError(e.message));
     api.visitorsGrouped('all').then((d) => setGrouped(d.grouped)).catch(() => setGrouped(null));
-    api.visitorsRecent(120).then((d) => setRecent(d.rows)).catch(() => setRecent([]));
+    api.visitorsRecent(200).then((d) => setRecent(d.rows)).catch(() => setRecent([]));
     api.visitorsGeo().then((d) => setGeo(d.geo)).catch(() => setGeo(null));
   };
 
@@ -119,37 +119,61 @@ export default function Visitors() {
   );
 }
 
-/** Detailed per-visit table: time, kind, device, place, state/UT, country, IP. */
+/** Detailed per-visit table with pagination: time, kind, device, place, state, IP. */
 function VisitorTable({ rows }) {
+  const PAGE = 15;
+  const [page, setPage] = useState(0);
   if (!rows) return <div className="card p-6 text-sm text-muted">Loading…</div>;
   if (!rows.length) return <div className="card p-8 text-center text-sm text-muted">No visits recorded yet.</div>;
+
+  const total = rows.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+  const cur = Math.min(page, pages - 1);       // clamp — never resets on refresh
+  const start = cur * PAGE;
+  const slice = rows.slice(start, start + PAGE);
   const head = ['When', 'Action', 'Device', 'Place', 'State / UT', 'Country', 'IP address', 'Came via'];
+
   return (
-    <div className="card overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead><tr>{head.map((h, i) => <th key={i} className="th">{h}</th>)}</tr></thead>
-          <tbody>
-            {rows.map((v) => (
-              <tr key={v.id} className="hover:bg-line/30 transition">
-                <td className="td text-xs whitespace-nowrap text-muted">{v.at_ist}</td>
-                <td className="td">
-                  <span className={`pill ${v.kind === 'wa_click' ? 'bg-emerald-50 text-emerald-700' : 'bg-sky-50 text-sky-700'}`}>
-                    {v.kind === 'wa_click' ? '💬 WhatsApp' : 'View'}
-                  </span>
-                </td>
-                <td className="td text-xs">{v.device || '—'}</td>
-                <td className="td text-xs">{v.city || '—'}</td>
-                <td className="td text-xs">{v.state || '—'}</td>
-                <td className="td text-xs">{v.country || '—'}</td>
-                <td className="td text-xs font-mono">{v.ip || '—'}</td>
-                <td className="td text-xs text-muted max-w-[12rem] truncate">{prettyRef(v.referrer) || 'direct'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <>
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead><tr>{head.map((h, i) => <th key={i} className="th">{h}</th>)}</tr></thead>
+            <tbody>
+              {slice.map((v) => (
+                <tr key={v.id} className="hover:bg-line/30 transition">
+                  <td className="td text-xs whitespace-nowrap text-muted">{v.at_ist}</td>
+                  <td className="td">
+                    <span className={`pill ${v.kind === 'wa_click' ? 'bg-emerald-50 text-emerald-700' : 'bg-sky-50 text-sky-700'}`}>
+                      {v.kind === 'wa_click' ? '💬 WhatsApp' : 'View'}
+                    </span>
+                  </td>
+                  <td className="td text-xs">{v.device || '—'}</td>
+                  <td className="td text-xs">{v.city || '—'}</td>
+                  <td className="td text-xs">{v.state || '—'}</td>
+                  <td className="td text-xs">{v.country || '—'}</td>
+                  <td className="td text-xs font-mono">{v.ip || '—'}</td>
+                  <td className="td text-xs text-muted max-w-[12rem] truncate">{prettyRef(v.referrer) || 'direct'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+
+      {pages > 1 && (
+        <div className="flex items-center justify-between mt-3 text-sm">
+          <span className="text-muted">{start + 1}–{Math.min(start + PAGE, total)} of {total}</span>
+          <div className="flex gap-2">
+            <button className="btn-sec" disabled={cur === 0}
+                    onClick={() => setPage(cur - 1)}>← Previous</button>
+            <span className="text-muted self-center">Page {cur + 1} / {pages}</span>
+            <button className="btn-sec" disabled={cur >= pages - 1}
+                    onClick={() => setPage(cur + 1)}>Next →</button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
