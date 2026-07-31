@@ -132,6 +132,10 @@ export const api = {
   support: () => request('/support'),
   updateTicket: (id, status) => request(`/support/${id}`, { method: 'PATCH', body: { status } }),
 
+  // Recover a paid-but-unactivated payment by its Razorpay payment id.
+  reconcilePayment: (payment_id, token) =>
+    request('/pay/reconcile', { method: 'POST', body: { payment_id, token }, quiet: true }),
+
   // Delete a mobile + its dependent rows, OTP-gated, refused if it ever transacted.
   mobileLookup: (mobile) => request(`/mobiles/lookup?mobile=${encodeURIComponent(mobile)}`),
   mobilePurgeOtp: (mobile) => request('/mobiles/purge/request-otp', { method: 'POST', body: { mobile }, quiet: true }),

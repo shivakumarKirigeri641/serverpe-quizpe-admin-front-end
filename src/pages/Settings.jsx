@@ -16,6 +16,7 @@ import ConfirmSave from '../components/ConfirmSave.jsx';
 import PaymentMode from '../components/PaymentMode.jsx';
 import AdminUsers from '../components/AdminUsers.jsx';
 import MobilePurge from '../components/MobilePurge.jsx';
+import ReconcilePayment from '../components/ReconcilePayment.jsx';
 
 const TABLES = [
   { name: 'quizpe_plans', label: 'Plans' },
@@ -94,7 +95,10 @@ export default function Settings() {
             <PaymentMode />
             <AdminUsers />
           </div>
-          <div className="mb-5"><MobilePurge /></div>
+          <div className="grid gap-5 mb-5 lg:grid-cols-2">
+            <ReconcilePayment />
+            <MobilePurge />
+          </div>
         </>
       )}
       {system && (
