@@ -34,14 +34,15 @@ export const setToastHandler = (fn) => { onToast = fn; };
 // noise, so they are excluded from the automatic snackbars.
 const isAuthPath = (p) => /\/(login|otp)\b|request-otp/.test(p);
 
-async function request(path, { method = 'GET', body, signal } = {}) {
+async function request(path, { method = 'GET', body, signal, quiet = false } = {}) {
   const headers = { Accept: 'application/json' };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body) headers['Content-Type'] = 'application/json';
 
-  // A write (anything but GET) that isn't an auth flow gets an automatic toast.
-  const toastable = method !== 'GET' && !isAuthPath(path);
+  // A write (anything but GET) that isn't an auth flow gets an automatic toast,
+  // unless the caller opts out with quiet (e.g. a price preview handled inline).
+  const toastable = method !== 'GET' && !isAuthPath(path) && !quiet;
 
   let res;
   try {
@@ -99,10 +100,16 @@ export const api = {
   parent: (id) => request(`/parents/${id}`),
   lookups: () => request('/lookups'),
   updateParent: (id, body) => request(`/parents/${id}`, { method: 'PATCH', body }),
+  updateExpiry: (id, date) => request(`/parents/${id}/expiry`, { method: 'PATCH', body: { date } }),
   mobilePreview: (id) => request(`/parents/${id}/mobile-preview`),
   changeMobile: (id, mobile, confirm) =>
     request(`/parents/${id}/mobile`, { method: 'POST', body: { mobile, confirm } }),
   addStudent: (parentId, body) => request(`/parents/${parentId}/students`, { method: 'POST', body }),
+  // Mid-plan add-child: preview the pro-rated price (quiet), then send the pay link.
+  addChildQuote: (parentId, body) =>
+    request(`/parents/${parentId}/add-child-link`, { method: 'POST', body: { ...body, dryRun: true }, quiet: true }),
+  addChildLink: (parentId, body) =>
+    request(`/parents/${parentId}/add-child-link`, { method: 'POST', body, quiet: true }),
   updateStudent: (id, body) => request(`/students/${id}`, { method: 'PATCH', body }),
   studentQuizzes: (id) => request(`/students/${id}/quizzes`),
   quiz: (trackerId) => request(`/quizzes/${trackerId}`),
@@ -125,6 +132,11 @@ export const api = {
   support: () => request('/support'),
   updateTicket: (id, status) => request(`/support/${id}`, { method: 'PATCH', body: { status } }),
 
+  // Delete a mobile + its dependent rows, OTP-gated, refused if it ever transacted.
+  mobileLookup: (mobile) => request(`/mobiles/lookup?mobile=${encodeURIComponent(mobile)}`),
+  mobilePurgeOtp: (mobile) => request('/mobiles/purge/request-otp', { method: 'POST', body: { mobile }, quiet: true }),
+  mobilePurge: (mobile, otp) => request('/mobiles/purge', { method: 'POST', body: { mobile, otp }, quiet: true }),
+
   system: () => request('/system'),
   paymentMode: () => request('/payment-mode'),
   requestModeOtp: () => request('/payment-mode/request-otp', { method: 'POST', body: {} }),
@@ -143,6 +155,10 @@ export const api = {
   visitorsRecent: (limit = 60) => request(`/visitors/recent?limit=${limit}`),
   visitorsGrouped: (kind = 'all') => request(`/visitors/grouped?kind=${kind}`),
   visitorsGeo: () => request('/visitors/geo'),
+
+  broadcastOptions: () => request('/broadcast/options'),
+  broadcastPreview: (body) => request('/broadcast/preview', { method: 'POST', body }),
+  broadcastSend: (body) => request('/broadcast/send', { method: 'POST', body }),
   setVisitorsInbox: (inbox_on) => request('/visitors/settings', { method: 'PATCH', body: { inbox_on } }),
 
   enquiries: (status) => request(`/enquiries${status ? `?status=${status}` : ''}`),

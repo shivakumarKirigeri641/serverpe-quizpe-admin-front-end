@@ -29,6 +29,7 @@ import Tonight from './pages/Tonight.jsx';
 import WhatsAppPage from './pages/WhatsApp.jsx';
 import Inbox from './pages/Inbox.jsx';
 import Visitors from './pages/Visitors.jsx';
+import Broadcast from './pages/Broadcast.jsx';
 import Toaster from './components/Toaster.jsx';
 import CommandPalette from './components/CommandPalette.jsx';
 import { PaymentCelebrator } from './components/Celebrate.jsx';
@@ -44,6 +45,7 @@ const NAV = [
   { to: '/visitors', label: 'Visitors', icon: '🌐' },
   { to: '/parents', label: 'Parents & students', icon: '👨‍👩‍👧' },
   { to: '/whatsapp', label: 'Conversations', icon: '💬' },
+  { to: '/broadcast', label: 'Broadcast', icon: '📣' },
   { to: '/questions', label: 'Question bank', icon: '❓' },
   { to: '/reports', label: 'Reports', icon: '📄' },
   { to: '/finance', label: 'Finance & GST', icon: '₹' },
@@ -116,6 +118,7 @@ export default function App() {
                 <Route path="/parents/:id" element={<ParentDetail />} />
                 <Route path="/quizzes/:trackerId" element={<QuizDetail />} />
                 <Route path="/whatsapp" element={<WhatsAppPage />} />
+                <Route path="/broadcast" element={<Broadcast />} />
                 <Route path="/questions" element={<Questions />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/finance" element={<Finance />} />

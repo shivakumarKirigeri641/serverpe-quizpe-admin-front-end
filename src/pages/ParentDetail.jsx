@@ -12,10 +12,39 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import AddStudent from '../components/AddStudent.jsx';
+import AddChildPaid from '../components/AddChildPaid.jsx';
 import EditStudent from '../components/EditStudent.jsx';
 import DangerZone from '../components/DangerZone.jsx';
 import EditParent from '../components/EditParent.jsx';
 import { Page, Loading, ErrorBox, Pill, inr } from '../components/ui.jsx';
+import { toast } from '../components/Toaster.jsx';
+
+/** Whole days from today to an expiry date (YYYY-MM-DD). */
+const daysLeft = (end) => Math.round(
+  (new Date(String(end).slice(0, 10) + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
+const expiryTone = (d) => (d < 0 ? 'red' : d <= 7 ? 'amber' : 'green');
+const expiryText = (d) => (d < 0 ? `expired ${-d}d ago` : d === 0 ? 'expires today' : `${d} day${d === 1 ? '' : 's'} left`);
+
+/** Inline editor to postpone/prepone the current plan's expiry. */
+function ExpiryEditor({ parentId, current, onSaved }) {
+  const [date, setDate] = useState(String(current).slice(0, 10));
+  const [busy, setBusy] = useState(false);
+  const changed = date && date !== String(current).slice(0, 10);
+  const save = async () => {
+    setBusy(true);
+    try { await api.updateExpiry(parentId, date); toast('Expiry updated.', 'success'); onSaved(); }
+    catch (e) { toast(e.message, 'error'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="flex items-center gap-2 mt-2">
+      <input type="date" className="input text-xs py-1 w-40" value={date} onChange={(e) => setDate(e.target.value)} />
+      <button className="btn-pri text-xs py-1" disabled={!changed || busy} onClick={save}>
+        {busy ? 'Saving…' : 'Change expiry'}
+      </button>
+    </div>
+  );
+}
 
 export default function ParentDetail() {
   const { id } = useParams();
@@ -57,7 +86,10 @@ export default function ParentDetail() {
       title={parent.parent_name || 'Parent'}
       subtitle={`${parent.parent_mobile_number} · ${parent.state_code || 'state not set'}`}
       actions={
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {current
+            ? (() => { const d = daysLeft(current.plan_end_date); return <Pill tone={expiryTone(d)}>{expiryText(d)}</Pill>; })()
+            : <Pill tone="grey">no active plan</Pill>}
           <EditParent parent={parent} onSaved={load} />
           <button className="btn-sec" onClick={() => navigate('/parents')}>← All parents</button>
         </div>
@@ -67,14 +99,18 @@ export default function ParentDetail() {
         <div className="card p-5">
           <h3 className="font-bold text-brand mb-3">Subscriptions</h3>
           {subscriptions.length ? subscriptions.map((s) => (
-            <div key={s.id} className="flex items-center justify-between border-b border-line/60 py-2 text-sm">
-              <span className="flex items-center gap-2">
-                <Pill tone={s.is_trial ? 'amber' : 'green'}>{s.plan_name}</Pill>
-                {s.is_active && <Pill tone="blue">current</Pill>}
-              </span>
-              <span className="text-xs text-muted">
-                {String(s.plan_start_date).slice(0, 10)} → {String(s.plan_end_date).slice(0, 10)}
-              </span>
+            <div key={s.id} className="border-b border-line/60 py-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Pill tone={s.is_trial ? 'amber' : 'green'}>{s.plan_name}</Pill>
+                  {s.is_active && <Pill tone="blue">current</Pill>}
+                  {s.is_active && (() => { const d = daysLeft(s.plan_end_date); return <Pill tone={expiryTone(d)}>{expiryText(d)}</Pill>; })()}
+                </span>
+                <span className="text-xs text-muted">
+                  {String(s.plan_start_date).slice(0, 10)} → {String(s.plan_end_date).slice(0, 10)}
+                </span>
+              </div>
+              {s.is_active && <ExpiryEditor parentId={parent.id} current={s.plan_end_date} onSaved={load} />}
             </div>
           )) : <p className="text-sm text-muted">None yet.</p>}
         </div>
@@ -184,6 +220,17 @@ export default function ParentDetail() {
           planName={current?.plan_name}
           onAdded={load}
         />
+
+        {/* Add a child mid-plan for money — only when the current plan is PAID
+            and has room to pro-rate (more than 7 days left). */}
+        {current && !current.is_trial && daysLeft(current.plan_end_date) > 7 && (
+          <AddChildPaid
+            parentId={parent.id}
+            daysLeft={daysLeft(current.plan_end_date)}
+            endDate={current.plan_end_date}
+            planName={current.plan_name}
+          />
+        )}
       </div>
 
       <DangerZone
