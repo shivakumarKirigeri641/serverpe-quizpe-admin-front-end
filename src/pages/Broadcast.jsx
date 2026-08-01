@@ -143,31 +143,34 @@ export default function Broadcast() {
   );
 }
 
-/** A WhatsApp-style preview of the selected template, with {{1}} filled by an
- *  example name and *bold* rendered. Shows the buttons underneath. */
+/** A WhatsApp-style preview of the COMPLETE template — header, body, footer and
+ *  buttons — with {{1}} filled by an example name and *bold* rendered. */
 function TemplatePreview({ t, name }) {
-  const raw = (t.body_text || '').trim();
-  const filled = raw.replace(/\{\{\s*1\s*\}\}/g, name);
+  const fill = (s) => (s || '').replace(/\{\{\s*1\s*\}\}/g, name);
+  const header = fill(t.header_text).trim();
+  const body = fill(t.body_text).trim();
+  const footer = (t.footer_text || '').trim();
   const buttons = Array.isArray(t.buttons) ? t.buttons
     : (() => { try { return JSON.parse(t.buttons || '[]'); } catch { return []; } })();
 
-  // Render WhatsApp *bold* + line breaks safely (no HTML injection).
-  const lines = filled.split('\n');
+  // WhatsApp *bold* + line breaks, rendered safely (no HTML injection).
+  const rich = (text) => text.split('\n').map((ln, i) => (
+    <p key={i} className={ln === '' ? 'h-2' : ''}>
+      {ln.split(/(\*[^*]+\*)/g).map((part, j) =>
+        /^\*[^*]+\*$/.test(part) ? <b key={j}>{part.slice(1, -1)}</b> : <span key={j}>{part}</span>)}
+    </p>
+  ));
+
   return (
     <div className="mt-3">
       <div className="text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">
-        Preview <span className="font-normal normal-case">(example name “{name}”)</span>
+        Full preview <span className="font-normal normal-case">(example name “{name}”)</span>
       </div>
-      {raw ? (
+      {body ? (
         <div className="rounded-xl rounded-tl-sm bg-[#dcf8c6] text-ink px-3 py-2.5 text-sm leading-relaxed max-w-md shadow-sm">
-          {lines.map((ln, i) => (
-            <p key={i} className={ln === '' ? 'h-2' : ''}>
-              {ln.split(/(\*[^*]+\*)/g).map((part, j) =>
-                /^\*[^*]+\*$/.test(part)
-                  ? <b key={j}>{part.slice(1, -1)}</b>
-                  : <span key={j}>{part}</span>)}
-            </p>
-          ))}
+          {header && <div className="font-bold text-ink mb-1.5">{rich(header)}</div>}
+          {rich(body)}
+          {footer && <div className="text-[12px] text-slate-500 mt-1.5">{footer}</div>}
           {buttons.length > 0 && (
             <div className="mt-2 pt-2 border-t border-black/10 space-y-1">
               {buttons.map((b, i) => (
@@ -180,7 +183,7 @@ function TemplatePreview({ t, name }) {
         </div>
       ) : (
         <p className="text-[12px] text-muted italic">
-          No stored body text for this template. Run <code>set_template_bodies.js</code> to show a real preview.
+          Template body not stored yet. Run <code>node scripts/set_template_bodies.js</code> on the server to load the full preview.
         </p>
       )}
     </div>
