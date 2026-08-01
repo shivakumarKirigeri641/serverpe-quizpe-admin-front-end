@@ -68,6 +68,12 @@ export default function Broadcast() {
               <p className="text-sm text-muted">No approved templates yet. Get a marketing template approved in Meta and add it to <code>whatsapp_templates</code>.</p>
             )}
             <p className="text-[11px] text-muted mt-1.5">Only marketing templates should be broadcast. Body must have one variable <code>{'{{1}}'}</code> = parent's first name.</p>
+
+            {template && (() => {
+              const t = opts.templates.find((x) => x.template_name === template);
+              if (!t) return null;
+              return <TemplatePreview t={t} name="Ravi" />;
+            })()}
           </div>
 
           <div>
@@ -134,6 +140,50 @@ export default function Broadcast() {
         <b className="text-ink">Tip:</b> keep marketing occasional and targeted — a win-back to lapsed parents, a referral nudge to happy payers, an exam-season push. Frequent blasts hurt your quality rating and get muted.
       </div>
     </Page>
+  );
+}
+
+/** A WhatsApp-style preview of the selected template, with {{1}} filled by an
+ *  example name and *bold* rendered. Shows the buttons underneath. */
+function TemplatePreview({ t, name }) {
+  const raw = (t.body_text || '').trim();
+  const filled = raw.replace(/\{\{\s*1\s*\}\}/g, name);
+  const buttons = Array.isArray(t.buttons) ? t.buttons
+    : (() => { try { return JSON.parse(t.buttons || '[]'); } catch { return []; } })();
+
+  // Render WhatsApp *bold* + line breaks safely (no HTML injection).
+  const lines = filled.split('\n');
+  return (
+    <div className="mt-3">
+      <div className="text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">
+        Preview <span className="font-normal normal-case">(example name “{name}”)</span>
+      </div>
+      {raw ? (
+        <div className="rounded-xl rounded-tl-sm bg-[#dcf8c6] text-ink px-3 py-2.5 text-sm leading-relaxed max-w-md shadow-sm">
+          {lines.map((ln, i) => (
+            <p key={i} className={ln === '' ? 'h-2' : ''}>
+              {ln.split(/(\*[^*]+\*)/g).map((part, j) =>
+                /^\*[^*]+\*$/.test(part)
+                  ? <b key={j}>{part.slice(1, -1)}</b>
+                  : <span key={j}>{part}</span>)}
+            </p>
+          ))}
+          {buttons.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-black/10 space-y-1">
+              {buttons.map((b, i) => (
+                <div key={i} className="text-center text-[#00a5f4] font-semibold text-[13px]">
+                  {b.text || b.title}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="text-[12px] text-muted italic">
+          No stored body text for this template. Run <code>set_template_bodies.js</code> to show a real preview.
+        </p>
+      )}
+    </div>
   );
 }
 

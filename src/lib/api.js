@@ -120,6 +120,7 @@ export const api = {
 
   invoices: (limit = 100) => request(`/finance/invoices?limit=${limit}`),
   gstr1: (period) => request(`/finance/gstr1${period ? `?period=${period}` : ''}`),
+  gstr1DownloadUrl: (period) => `${API_BASE}/admin/api/finance/gstr1/download?period=${period}`,
   financeSummary: () => request('/finance/summary'),
   financeMonthly: (months = 12) => request(`/finance/monthly?months=${months}`),
   expenses: (limit = 100) => request(`/finance/expenses?limit=${limit}`),

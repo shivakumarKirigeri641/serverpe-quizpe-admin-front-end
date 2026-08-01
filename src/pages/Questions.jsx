@@ -45,7 +45,15 @@ export default function Questions() {
   const [importing, setImporting] = useState(false);
   const LIMIT = 25;
 
-  useEffect(() => { api.questionFacets().then((d) => setFacets(d.rows)).catch(() => {}); }, []);
+  useEffect(() => {
+    api.questionFacets().then((d) => {
+      setFacets(d.rows);
+      // When there's only one medium (or one subject) in the whole bank, there's
+      // nothing to choose — pre-select it so the admin doesn't have to.
+      const only = (key) => { const v = [...new Set(d.rows.map((x) => x[key]))].filter(Boolean); return v.length === 1 ? v[0] : null; };
+      setF((s) => ({ ...s, medium: s.medium || only('medium_code') || '', subject: s.subject || only('subject_code') || '' }));
+    }).catch(() => {});
+  }, []);
 
   const load = () => {
     setError('');

@@ -63,14 +63,21 @@ export default function Tonight() {
   if (!rows) return <Loading label="Loading tonight…" />;
 
   const by = (s) => rows.filter((r) => r.state === s).length;
-  const sorted = [...rows].sort((a, b) =>
-    (STATE[a.state]?.order ?? 9) - (STATE[b.state]?.order ?? 9) ||
-    a.student_name.localeCompare(b.student_name));
 
   const summary = [
     ['in_progress', 'Answering'], ['completed', 'Completed'], ['partial', 'Partly done'],
     ['skipped', 'Skipped'], ['not_started', 'Not started'], ['waiting', 'Waiting'],
   ].filter(([s]) => by(s) > 0);
+
+  // Grouped into sections — action-first order (who to chase at the top).
+  const GROUP_ORDER = ['in_progress', 'not_started', 'skipped', 'partial', 'completed', 'ready', 'waiting'];
+  const groups = GROUP_ORDER
+    .map((s) => ({
+      s,
+      items: rows.filter((r) => r.state === s).sort((a, b) => a.student_name.localeCompare(b.student_name)),
+    }))
+    .filter((g) => g.items.length);
+  let idx = 0;   // running index across groups, so the stagger animation stays smooth
 
   return (
     <Page
@@ -92,8 +99,18 @@ export default function Tonight() {
         )) : <span className="text-sm text-muted">No children on an active plan.</span>}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {sorted.map((r, i) => {
+      {groups.map((g) => {
+        const gs = STATE[g.s] || STATE.waiting;
+        return (
+        <div key={g.s} className="mb-6">
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className={`w-2.5 h-2.5 rounded-full ${gs.chip}`} />
+            <h3 className="font-bold text-ink">{gs.icon} {gs.label}</h3>
+            <span className="pill bg-line/50 text-muted">{g.items.length}</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {g.items.map((r) => {
+          const i = idx++;
           const st = STATE[r.state] || STATE.waiting;
           // Actual questions the parent gets = the number built into the quiz
           // (built_count), which can be fewer than the planned question_count
@@ -178,7 +195,10 @@ export default function Tonight() {
             </motion.div>
           );
         })}
-      </div>
+          </div>
+        </div>
+        );
+      })}
 
       <AnimatePresence>
         {preview && <ReportPreview report={preview} onClose={() => setPreview(null)} />}

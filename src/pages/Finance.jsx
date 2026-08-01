@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { api } from '../lib/api';
+import { api, download } from '../lib/api';
 import { Page, Loading, ErrorBox, Stat, inr } from '../components/ui.jsx';
 import MoneyView from '../components/MoneyView.jsx';
 
@@ -70,8 +70,13 @@ export default function Finance() {
               <option key={p} value={p}>{p}</option>
             ))}
           </select>
-          <button className="btn-pri" onClick={exportCsv} disabled={!gst.rows.length}>
-            ⬇ Export CSV
+          <button className="btn-sec" onClick={exportCsv} disabled={!gst.rows.length}>
+            ⬇ CSV
+          </button>
+          <button className="btn-pri" disabled={!gst.rows.length}
+                  onClick={() => download(api.gstr1DownloadUrl(gst.period), `GSTR1-${gst.period}.pdf`)
+                    .catch((e) => alert(e.message))}>
+            📄 GSTR-1 PDF
           </button>
         </div>
       ) : null}
