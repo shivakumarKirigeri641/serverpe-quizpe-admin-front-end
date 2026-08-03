@@ -131,7 +131,7 @@ export const api = {
   updateRow: (name, id, patch) => request(`/tables/${name}/${id}`, { method: 'PATCH', body: patch }),
 
   support: () => request('/support'),
-  updateTicket: (id, status) => request(`/support/${id}`, { method: 'PATCH', body: { status } }),
+  updateTicket: (id, status, resolution) => request(`/support/${id}`, { method: 'PATCH', body: { status, resolution } }),
 
   // Recover a paid-but-unactivated payment by its Razorpay payment id.
   reconcilePayment: (payment_id, token) =>
@@ -141,6 +141,11 @@ export const api = {
   mobileLookup: (mobile) => request(`/mobiles/lookup?mobile=${encodeURIComponent(mobile)}`),
   mobilePurgeOtp: (mobile) => request('/mobiles/purge/request-otp', { method: 'POST', body: { mobile }, quiet: true }),
   mobilePurge: (mobile, otp) => request('/mobiles/purge', { method: 'POST', body: { mobile, otp }, quiet: true }),
+
+  templates: () => request('/templates'),
+  createTemplate: (body) => request('/templates', { method: 'POST', body }),
+  updateTemplate: (id, body) => request(`/templates/${id}`, { method: 'PATCH', body }),
+  deleteTemplate: (id) => request(`/templates/${id}`, { method: 'DELETE' }),
 
   system: () => request('/system'),
   paymentMode: () => request('/payment-mode'),
