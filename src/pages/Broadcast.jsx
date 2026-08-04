@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { toast } from '../components/Toaster.jsx';
 import { Page, Loading, ErrorBox } from '../components/ui.jsx';
+import { templateGuide } from '../lib/templateGuide';
 
 export default function Broadcast() {
   const [opts, setOpts] = useState(null);
@@ -72,7 +73,19 @@ export default function Broadcast() {
             {template && (() => {
               const t = opts.templates.find((x) => x.template_name === template);
               if (!t) return null;
-              return <TemplatePreview t={t} name="Ravi" />;
+              const g = templateGuide(t);
+              return (
+                <>
+                  <div className="mt-3 rounded-xl bg-sky-50 border border-sky-200 p-3">
+                    <div className="text-[11px] font-bold uppercase tracking-wide text-sky-800 mb-1">Who to send this to</div>
+                    <div className="text-sm text-ink"><b>{g.audience}</b> — {g.note}</div>
+                    {g.manual === false && (
+                      <div className="text-[12px] text-amber-700 mt-1">⚠️ This is an automatic template — the app sends it on its own. Only broadcast marketing templates from here.</div>
+                    )}
+                  </div>
+                  <TemplatePreview t={t} name="Ravi" />
+                </>
+              );
             })()}
           </div>
 
@@ -119,6 +132,23 @@ export default function Broadcast() {
               <div className="border-t border-line pt-3">
                 <Row label="Will receive it" value={preview.recipients} big />
               </div>
+
+              {preview.list && preview.list.length > 0 && (
+                <div className="border-t border-line pt-3">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-muted mb-2">
+                    Recipients{preview.recipients > preview.list.length ? ` (showing first ${preview.list.length} of ${preview.recipients})` : ''}
+                  </div>
+                  <div className="max-h-64 overflow-y-auto rounded-lg border border-line divide-y divide-line/60">
+                    {preview.list.map((r, i) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-1.5 text-sm">
+                        <span className="font-medium truncate mr-2">{r.name || '—'}</span>
+                        <span className="text-muted font-mono text-xs whitespace-nowrap">{r.mobile}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <button className="btn-pri w-full mt-2" disabled={!canSend || busy} onClick={doSend}>
                 {busy === 'send' ? 'Sending…' : `📣 Send to ${preview.recipients} parent(s)`}
               </button>

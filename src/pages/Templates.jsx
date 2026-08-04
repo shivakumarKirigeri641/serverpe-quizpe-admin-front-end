@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import { Page, Loading, ErrorBox, Empty, Pill } from '../components/ui.jsx';
+import { templateGuide } from '../lib/templateGuide';
 
 const STATUS_TONE = { APPROVED: 'green', PENDING: 'amber', REJECTED: 'red' };
 const CAT_TONE = { UTILITY: 'blue', MARKETING: 'amber', AUTHENTICATION: 'grey' };
@@ -119,6 +120,19 @@ export default function Templates() {
               {r.send_context && <span className="text-xs text-muted">· {r.send_context}</span>}
               <span className="text-xs text-muted ml-auto">{r.language}</span>
             </div>
+
+            {/* who to send this to */}
+            {(() => {
+              const g = templateGuide(r);
+              return (
+                <div className="text-[13px] mb-3">
+                  <span className={`pill ${g.manual === true ? 'bg-emerald-50 text-emerald-700' : g.manual === false ? 'bg-sky-50 text-sky-700' : 'bg-line/60 text-muted'}`}>
+                    {g.manual === true ? 'Manual broadcast' : g.manual === false ? 'Automatic' : 'Unclassified'}
+                  </span>
+                  <span className="text-muted ml-2"><b className="text-ink">{g.audience}</b> — {g.note}</span>
+                </div>
+              );
+            })()}
 
             {/* preview */}
             <div className="rounded-xl bg-line/20 p-3 mb-3 text-sm whitespace-pre-wrap">

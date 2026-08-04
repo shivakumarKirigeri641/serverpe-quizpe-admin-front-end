@@ -5,18 +5,35 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Page, Loading, ErrorBox, Pill, Row, inr } from '../components/ui.jsx';
 
+/** Formatted expiry date + a colour-coded days-left / expired badge. */
+function expiryInfo(dateStr) {
+  if (!dateStr) return null;
+  const end = new Date(`${dateStr}T00:00:00`);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const days = Math.round((end - today) / 86400000);
+  const nice = end.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  let tone = 'green', label = `${days} days left`;
+  if (days < 0) { tone = 'red'; label = `expired ${-days}d ago`; }
+  else if (days === 0) { tone = 'red'; label = 'expires today'; }
+  else if (days === 1) { tone = 'red'; label = 'expires tomorrow'; }
+  else if (days <= 3) { tone = 'red'; label = `${days} days left`; }
+  else if (days <= 7) { tone = 'amber'; label = `${days} days left`; }
+  return { nice, tone, label };
+}
+
 export default function Parents() {
   const [q, setQ] = useState('');
   const [rows, setRows] = useState(null);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
+  const [filter, setFilter] = useState('all');
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const LIMIT = 25;
 
   const load = () => {
     setError('');
-    api.parents({ q, limit: LIMIT, offset })
+    api.parents({ q, limit: LIMIT, offset, filter })
       .then((d) => { setRows(d.rows); setTotal(d.total); })
       .catch((e) => setError(e.message));
   };
@@ -25,7 +42,14 @@ export default function Parents() {
   useEffect(() => {
     const t = setTimeout(load, q ? 300 : 0);
     return () => clearTimeout(t);
-  }, [q, offset]);
+  }, [q, offset, filter]);
+
+  const FILTERS = [
+    { key: 'all', label: 'All' },
+    { key: 'active', label: 'Active' },
+    { key: 'expiring', label: 'Expiring ≤7d' },
+    { key: 'lapsed', label: 'Lapsed (not renewed)' },
+  ];
 
   const head = ['Parent', 'Mobile', 'State', 'Children', 'Plan', 'Valid till', 'Status', 'Lifetime value'];
 
@@ -40,6 +64,15 @@ export default function Parents() {
         />
       }
     >
+      <div className="flex flex-wrap gap-2 mb-4">
+        {FILTERS.map((f) => (
+          <button key={f.key}
+                  onClick={() => { setOffset(0); setFilter(f.key); }}
+                  className={`btn-sec text-sm ${filter === f.key ? 'bg-emerald-600 text-white border-emerald-600' : ''}`}>
+            {f.label}
+          </button>
+        ))}
+      </div>
       {error ? <ErrorBox error={error} onRetry={load} />
         : !rows ? <Loading label="Loading parents…" />
           : (
@@ -60,7 +93,17 @@ export default function Parents() {
                               ? <Pill tone={p.is_trial ? 'amber' : 'green'}>{p.plan_name}</Pill>
                               : <span className="text-muted text-xs">none</span>}
                           </td>
-                          <td className="td whitespace-nowrap text-xs">{p.plan_end_date || '—'}</td>
+                          <td className="td whitespace-nowrap text-xs">
+                            {(() => {
+                              const e = expiryInfo(p.plan_end_date);
+                              return e ? (
+                                <div className="flex flex-col items-start gap-1">
+                                  <span className="font-medium">{e.nice}</span>
+                                  <Pill tone={e.tone}>{e.label}</Pill>
+                                </div>
+                              ) : <span className="text-muted">—</span>;
+                            })()}
+                          </td>
                           <td className="td">
                             <Pill tone={p.subscribed ? 'green' : 'grey'}>
                               {p.subscribed ? 'active' : 'inactive'}

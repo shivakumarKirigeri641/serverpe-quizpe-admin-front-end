@@ -95,8 +95,8 @@ export const api = {
   feed: (limit = 50) => request(`/feed?limit=${limit}`),
   tonight: () => request('/tonight'),
 
-  parents: ({ q = '', limit = 25, offset = 0 } = {}) =>
-    request(`/parents?q=${encodeURIComponent(q)}&limit=${limit}&offset=${offset}`),
+  parents: ({ q = '', limit = 25, offset = 0, filter = 'all' } = {}) =>
+    request(`/parents?q=${encodeURIComponent(q)}&limit=${limit}&offset=${offset}&filter=${filter}`),
   parent: (id) => request(`/parents/${id}`),
   lookups: () => request('/lookups'),
   updateParent: (id, body) => request(`/parents/${id}`, { method: 'PATCH', body }),
