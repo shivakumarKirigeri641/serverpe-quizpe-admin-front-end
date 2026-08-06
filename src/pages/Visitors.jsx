@@ -78,15 +78,22 @@ export default function Visitors() {
         </div>
 
         <div className="card p-5">
-          <h2 className="font-bold text-brand mb-3">Where they come from</h2>
-          {!a.referrers.length ? (
+          <h2 className="font-bold text-brand mb-3">Traffic sources</h2>
+          {!(a.sources && a.sources.length) ? (
             <p className="text-sm text-muted">No traffic yet.</p>
           ) : (
-            <ul className="space-y-2">
-              {a.referrers.map((r) => (
-                <li key={r.source} className="flex items-center justify-between text-sm">
-                  <span className="truncate text-ink">{prettyRef(r.source)}</span>
-                  <span className="font-bold text-brand ml-3">{r.n}</span>
+            <ul className="space-y-2.5">
+              {a.sources.map((s) => (
+                <li key={s.source} className="text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="truncate text-ink">{s.source}</span>
+                    <span className="font-bold text-brand ml-3 whitespace-nowrap">
+                      {s.views}{s.today ? <span className="text-muted font-normal"> · {s.today} today</span> : null}
+                    </span>
+                  </div>
+                  <div className="mt-1 h-1.5 rounded bg-line overflow-hidden">
+                    <div className="h-full bg-brand" style={{ width: `${Math.max(3, s.pct)}%` }} />
+                  </div>
                 </li>
               ))}
             </ul>

@@ -96,9 +96,33 @@ export function Retention() {
 const WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function ActivityCalendar() {
-  const [rows, setRows] = useState(null);
-  useEffect(() => { api.activity(12).then((d) => setRows(d.rows)).catch(() => setRows(null)); }, []);
-  if (!rows || !rows.length) return null;
+  const [rows, setRows] = useState(null);   // null = loading, [] = load failed
+  useEffect(() => {
+    api.activity(12).then((d) => setRows(Array.isArray(d.rows) ? d.rows : []))
+      .catch(() => setRows([]));
+  }, []);
+  if (rows === null) return null;            // still loading — brief
+
+  const total = rows.reduce((t, r) => t + (Number(r.n) || 0), 0);
+
+  // Always show the card (heading + a clear state), so an empty window reads as
+  // "no quizzes yet" rather than a broken/blank graph — the reason this looked
+  // like "no graph" when few quizzes had been completed.
+  if (!rows.length || total === 0) {
+    return (
+      <div className="card p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold text-brand">Quiz activity — last 12 weeks</h2>
+          <span className="text-xs text-muted">completed quizzes per day</span>
+        </div>
+        <p className="text-sm text-muted py-6 text-center">
+          {rows.length
+            ? 'No completed quizzes in the last 12 weeks yet — this heatmap fills in as children finish their daily quizzes.'
+            : 'Could not load quiz activity. Please refresh.'}
+        </p>
+      </div>
+    );
+  }
 
   const max = Math.max(1, ...rows.map((r) => r.n));
   const cells = [];
@@ -108,7 +132,9 @@ export function ActivityCalendar() {
   while (cells.length % 7) cells.push(null);
   const weeks = [];
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
-  const shade = (n) => (n === 0 ? '#eef2f0' : `rgba(15,118,110,${(0.2 + 0.8 * (n / max)).toFixed(3)})`);
+  // Empty days are a faint grid; any day WITH quizzes starts at a clearly-visible
+  // teal (min 40%) so even 1–2 quizzes stand out instead of hiding in the grey.
+  const shade = (n) => (n === 0 ? '#e6ebe8' : `rgba(15,118,110,${(0.4 + 0.6 * (n / max)).toFixed(3)})`);
 
   return (
     <div className="card p-5">
