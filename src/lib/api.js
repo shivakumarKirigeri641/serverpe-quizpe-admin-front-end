@@ -119,6 +119,8 @@ export const api = {
   reportViewUrl: (id) => `${API_BASE}/admin/api/reports/${id}/view`,
 
   invoices: (limit = 100) => request(`/finance/invoices?limit=${limit}`),
+  invoiceDownloadUrl: (id) => `${API_BASE}/admin/api/finance/invoices/${id}/download`,
+  invoiceViewUrl: (id) => `${API_BASE}/admin/api/finance/invoices/${id}/view`,
   gstr1: (period) => request(`/finance/gstr1${period ? `?period=${period}` : ''}`),
   gstr1DownloadUrl: (period) => `${API_BASE}/admin/api/finance/gstr1/download?period=${period}`,
   financeSummary: () => request('/finance/summary'),
