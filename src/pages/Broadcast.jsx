@@ -21,6 +21,12 @@ export default function Broadcast() {
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState('');
   const [result, setResult] = useState(null);
+  const [pvals, setPvals] = useState([]);   // admin-typed values for {{2}}..{{n}}
+
+  /** A template's variables array, tolerant of json/text storage. */
+  const varsOf = (t) => !t ? []
+    : Array.isArray(t.variables) ? t.variables
+    : (() => { try { return JSON.parse(t.variables || '[]'); } catch { return []; } })();
 
   useEffect(() => {
     api.broadcastOptions().then(setOpts).catch((e) => setError(e.message));
@@ -37,7 +43,7 @@ export default function Broadcast() {
     if (!confirm(`Send "${template}" to ${preview.recipients} parent(s) in "${segment}"? This messages real people.`)) return;
     setBusy('send');
     try {
-      const r = await api.broadcastSend({ template, segment, cooldownDays: Number(cooldown) });
+      const r = await api.broadcastSend({ template, segment, cooldownDays: Number(cooldown), params: pvals });
       setResult(r);
       toast(`Broadcast done — ${r.sent} sent${r.failed ? `, ${r.failed} failed` : ''}.`, 'success');
       setPreview(null);
@@ -48,8 +54,11 @@ export default function Broadcast() {
   if (error) return <ErrorBox error={error} onRetry={() => api.broadcastOptions().then(setOpts).catch((e) => setError(e.message))} />;
   if (!opts) return <Loading label="Loading broadcast…" />;
 
+  const selT = opts.templates.find((x) => x.template_name === template);
+  const extraVars = varsOf(selT).slice(1);           // {{2}}..{{n}} — {{1}} is always the name
+  const extraFilled = extraVars.length === 0 || pvals.slice(0, extraVars.length).every((v) => v && v.trim());
   const canPreview = segment;
-  const canSend = template && segment && preview && preview.recipients > 0;
+  const canSend = template && segment && preview && preview.recipients > 0 && extraFilled;
 
   return (
     <Page title="Broadcast" subtitle="Send an approved marketing template to a segment — with over-send guardrails">
@@ -59,7 +68,13 @@ export default function Broadcast() {
           <div>
             <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">Template (approved only)</label>
             {opts.templates.length ? (
-              <select className="input" value={template} onChange={(e) => setTemplate(e.target.value)}>
+              <select className="input" value={template}
+                      onChange={(e) => {
+                        const name = e.target.value;
+                        setTemplate(name); setPreview(null);
+                        const n = Math.max(0, varsOf(opts.templates.find((x) => x.template_name === name)).length - 1);
+                        setPvals(Array(n).fill(''));
+                      }}>
                 <option value="">— pick a template —</option>
                 {opts.templates.map((t) => (
                   <option key={t.template_name} value={t.template_name}>{t.template_name}</option>
@@ -83,7 +98,27 @@ export default function Broadcast() {
                       <div className="text-[12px] text-amber-700 mt-1">⚠️ This is an automatic template — the app sends it on its own. Only broadcast marketing templates from here.</div>
                     )}
                   </div>
-                  <TemplatePreview t={t} name="Ravi" />
+
+                  {extraVars.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <div className="text-[11px] font-bold uppercase tracking-wide text-muted">Your message text</div>
+                      {extraVars.map((v, i) => (
+                        <div key={i}>
+                          <label className="block text-[11px] text-muted mb-1">
+                            <span className="capitalize">{String(v).replace(/_/g, ' ')}</span>{' '}
+                            <span className="font-mono">{`{{${i + 2}}}`}</span>
+                          </label>
+                          <textarea rows={i === extraVars.length - 1 ? 3 : 2} className="input"
+                                    placeholder={`Type the ${String(v).replace(/_/g, ' ')}…`}
+                                    value={pvals[i] || ''}
+                                    onChange={(e) => { const n = [...pvals]; n[i] = e.target.value; setPvals(n); setPreview(null); }} />
+                        </div>
+                      ))}
+                      <p className="text-[11px] text-muted">{'{{1}}'} is filled with each parent's first name automatically.</p>
+                    </div>
+                  )}
+
+                  <TemplatePreview t={t} name="Ravi" params={pvals} />
                 </>
               );
             })()}
@@ -175,8 +210,14 @@ export default function Broadcast() {
 
 /** A WhatsApp-style preview of the COMPLETE template — header, body, footer and
  *  buttons — with {{1}} filled by an example name and *bold* rendered. */
-function TemplatePreview({ t, name }) {
-  const fill = (s) => (s || '').replace(/\{\{\s*1\s*\}\}/g, name);
+function TemplatePreview({ t, name, params = [] }) {
+  const fill = (s) => {
+    let out = (s || '').replace(/\{\{\s*1\s*\}\}/g, name);
+    params.forEach((val, i) => {
+      out = out.replace(new RegExp(`\\{\\{\\s*${i + 2}\\s*\\}\\}`, 'g'), val || `{{${i + 2}}}`);
+    });
+    return out;
+  };
   const header = fill(t.header_text).trim();
   const body = fill(t.body_text).trim();
   const footer = (t.footer_text || '').trim();

@@ -171,6 +171,10 @@ export const api = {
   broadcastOptions: () => request('/broadcast/options'),
   broadcastPreview: (body) => request('/broadcast/preview', { method: 'POST', body }),
   broadcastSend: (body) => request('/broadcast/send', { method: 'POST', body }),
+
+  holidays: (all = false) => request(`/holidays${all ? '?all=1' : ''}`),
+  holidayAdd: (date, label) => request('/holidays', { method: 'POST', body: { date, label } }),
+  holidayRemove: (date) => request(`/holidays/${date}`, { method: 'DELETE' }),
   setVisitorsInbox: (inbox_on) => request('/visitors/settings', { method: 'PATCH', body: { inbox_on } }),
 
   enquiries: (status) => request(`/enquiries${status ? `?status=${status}` : ''}`),

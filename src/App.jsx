@@ -31,6 +31,7 @@ import Inbox from './pages/Inbox.jsx';
 import Visitors from './pages/Visitors.jsx';
 import Broadcast from './pages/Broadcast.jsx';
 import Templates from './pages/Templates.jsx';
+import Holidays from './pages/Holidays.jsx';
 import Toaster from './components/Toaster.jsx';
 import CommandPalette from './components/CommandPalette.jsx';
 import { PaymentCelebrator } from './components/Celebrate.jsx';
@@ -47,6 +48,7 @@ const NAV = [
   { to: '/parents', label: 'Parents & students', icon: '👨‍👩‍👧' },
   { to: '/whatsapp', label: 'Conversations', icon: '💬' },
   { to: '/broadcast', label: 'Broadcast', icon: '📣' },
+  { to: '/holidays', label: 'Holidays', icon: '📅' },
   { to: '/templates', label: 'Templates', icon: '🧩' },
   { to: '/questions', label: 'Question bank', icon: '❓' },
   { to: '/reports', label: 'Reports', icon: '📄' },
@@ -121,6 +123,7 @@ export default function App() {
                 <Route path="/quizzes/:trackerId" element={<QuizDetail />} />
                 <Route path="/whatsapp" element={<WhatsAppPage />} />
                 <Route path="/broadcast" element={<Broadcast />} />
+                <Route path="/holidays" element={<Holidays />} />
                 <Route path="/templates" element={<Templates />} />
                 <Route path="/questions" element={<Questions />} />
                 <Route path="/reports" element={<Reports />} />
