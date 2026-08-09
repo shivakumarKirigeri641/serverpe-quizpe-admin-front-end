@@ -123,6 +123,7 @@ export const api = {
   invoiceViewUrl: (id) => `${API_BASE}/admin/api/finance/invoices/${id}/view`,
   gstr1: (period) => request(`/finance/gstr1${period ? `?period=${period}` : ''}`),
   gstr1DownloadUrl: (period) => `${API_BASE}/admin/api/finance/gstr1/download?period=${period}`,
+  dbExportUrl: () => `${API_BASE}/admin/api/db/export`,
   financeSummary: () => request('/finance/summary'),
   financeMonthly: (months = 12) => request(`/finance/monthly?months=${months}`),
   expenses: (limit = 100) => request(`/finance/expenses?limit=${limit}`),
@@ -171,6 +172,7 @@ export const api = {
   broadcastOptions: () => request('/broadcast/options'),
   broadcastPreview: (body) => request('/broadcast/preview', { method: 'POST', body }),
   broadcastSend: (body) => request('/broadcast/send', { method: 'POST', body }),
+  broadcastDirect: (body) => request('/broadcast/direct', { method: 'POST', body }),
 
   holidays: (all = false) => request(`/holidays${all ? '?all=1' : ''}`),
   holidayAdd: (date, label) => request('/holidays', { method: 'POST', body: { date, label } }),

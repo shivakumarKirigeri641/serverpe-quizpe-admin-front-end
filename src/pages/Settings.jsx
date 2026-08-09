@@ -10,7 +10,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { api } from '../lib/api';
+import { api, download } from '../lib/api';
 import { Page, Loading, ErrorBox, Pill } from '../components/ui.jsx';
 import ConfirmSave from '../components/ConfirmSave.jsx';
 import PaymentMode from '../components/PaymentMode.jsx';
@@ -37,8 +37,18 @@ export default function Settings() {
   const [pending, setPending] = useState(null);   // row awaiting confirmation
   const [toast, setToast] = useState('');
   const [isSuper, setIsSuper] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => { api.me().then((m) => setIsSuper(!!m.super)).catch(() => {}); }, []);
+
+  const exportDb = async () => {
+    setExporting(true); setError('');
+    try {
+      await download(api.dbExportUrl(), `quizpe-db-${new Date().toISOString().slice(0, 10)}.sql.gz`);
+    } catch (e) {
+      setError(e.message || 'Export failed.');
+    } finally { setExporting(false); }
+  };
 
   const load = () => {
     setError(''); setEdits({});
@@ -98,6 +108,20 @@ export default function Settings() {
           <div className="grid gap-5 mb-5 lg:grid-cols-2">
             <ReconcilePayment />
             <MobilePurge />
+          </div>
+          <div className="card p-5 mb-5">
+            <h2 className="font-bold text-brand mb-1">Database export</h2>
+            <p className="text-xs text-muted mb-3">
+              Download a complete gzipped backup of the live database (<code>pg_dump</code>) to test locally.
+              {' '}<b className="text-red-600">Sensitive:</b> it contains every parent's phone number, payments
+              and GST records — keep the file safe and never share it.
+            </p>
+            <button className="btn-pri" disabled={exporting} onClick={exportDb}>
+              {exporting ? 'Preparing… (may take a minute)' : '⬇ Download database backup'}
+            </button>
+            <p className="text-[11px] text-muted mt-2">
+              Restore locally: <code>gunzip -c quizpe-db-*.sql.gz | psql serverpe_quizpe_local</code>
+            </p>
           </div>
         </>
       )}

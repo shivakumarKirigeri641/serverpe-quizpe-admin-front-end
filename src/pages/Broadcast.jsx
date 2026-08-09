@@ -22,6 +22,8 @@ export default function Broadcast() {
   const [busy, setBusy] = useState('');
   const [result, setResult] = useState(null);
   const [pvals, setPvals] = useState([]);   // admin-typed values for {{2}}..{{n}}
+  const [mode, setMode] = useState('segment');   // 'segment' | 'numbers'
+  const [mobiles, setMobiles] = useState('');    // free-typed numbers for direct send
 
   /** A template's variables array, tolerant of json/text storage. */
   const varsOf = (t) => !t ? []
@@ -34,18 +36,29 @@ export default function Broadcast() {
 
   const doPreview = async () => {
     setBusy('preview'); setResult(null); setPreview(null);
-    try { setPreview(await api.broadcastPreview({ segment, cooldownDays: Number(cooldown) })); }
-    catch (e) { toast(e.message, 'error'); }
+    try {
+      if (mode === 'numbers') {
+        const d = await api.broadcastDirect({ template, params: pvals, mobiles, dryRun: true });
+        setPreview({ total: d.total, no_session: 0, skipped_cooldown: d.paused,
+          recipients: d.total - d.paused, direct: true,
+          list: d.recipients.map((r) => ({ name: r.name, mobile: r.mobile })) });
+      } else {
+        setPreview(await api.broadcastPreview({ segment, cooldownDays: Number(cooldown) }));
+      }
+    } catch (e) { toast(e.message, 'error'); }
     finally { setBusy(''); }
   };
 
   const doSend = async () => {
-    if (!confirm(`Send "${template}" to ${preview.recipients} parent(s) in "${segment}"? This messages real people.`)) return;
+    const who = mode === 'numbers' ? `${preview.recipients} number(s)` : `${preview.recipients} parent(s) in "${segment}"`;
+    if (!confirm(`Send "${template}" to ${who}? This messages real people.`)) return;
     setBusy('send');
     try {
-      const r = await api.broadcastSend({ template, segment, cooldownDays: Number(cooldown), params: pvals });
+      const r = mode === 'numbers'
+        ? await api.broadcastDirect({ template, params: pvals, mobiles })
+        : await api.broadcastSend({ template, segment, cooldownDays: Number(cooldown), params: pvals });
       setResult(r);
-      toast(`Broadcast done — ${r.sent} sent${r.failed ? `, ${r.failed} failed` : ''}.`, 'success');
+      toast(`Sent — ${r.sent}${r.failed ? `, ${r.failed} failed` : ''}${r.skipped ? `, ${r.skipped} skipped (STOP)` : ''}.`, 'success');
       setPreview(null);
     } catch (e) { toast(e.message, 'error'); }
     finally { setBusy(''); }
@@ -57,8 +70,9 @@ export default function Broadcast() {
   const selT = opts.templates.find((x) => x.template_name === template);
   const extraVars = varsOf(selT).slice(1);           // {{2}}..{{n}} — {{1}} is always the name
   const extraFilled = extraVars.length === 0 || pvals.slice(0, extraVars.length).every((v) => v && v.trim());
-  const canPreview = segment;
-  const canSend = template && segment && preview && preview.recipients > 0 && extraFilled;
+  const canPreview = mode === 'segment' ? !!segment : !!(template && mobiles.trim());
+  const canSend = template && preview && preview.recipients > 0 && extraFilled
+    && (mode === 'segment' ? !!segment : true);
 
   return (
     <Page title="Broadcast" subtitle="Send an approved marketing template to a segment — with over-send guardrails">
@@ -124,27 +138,49 @@ export default function Broadcast() {
             })()}
           </div>
 
+          {/* send to a whole segment, or to specific numbers you type in */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">Who gets it</label>
-            <div className="space-y-1.5">
-              {opts.segments.map((s) => (
-                <label key={s.key} className={`flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer text-sm ${segment === s.key ? 'border-brand bg-brand/5' : 'border-line'}`}>
-                  <input type="radio" name="seg" checked={segment === s.key} onChange={() => { setSegment(s.key); setPreview(null); }} />
-                  <span className="flex-1">{s.label}</span>
-                  <span className="font-bold text-brand">{s.count}</span>
-                </label>
+            <div className="flex gap-1 mb-3">
+              {[['segment', 'A segment'], ['numbers', 'Specific numbers']].map(([k, label]) => (
+                <button key={k} type="button"
+                        onClick={() => { setMode(k); setPreview(null); }}
+                        className={`text-sm px-3 py-1.5 rounded-lg font-semibold transition ${mode === k ? 'bg-brand text-white' : 'text-muted hover:bg-slate-100'}`}>
+                  {label}
+                </button>
               ))}
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">Frequency guard</label>
-            <div className="flex items-center gap-2 text-sm">
-              <span>Skip anyone messaged in the last</span>
-              <input type="number" min="0" max="90" className="input w-20 text-center" value={cooldown}
-                     onChange={(e) => { setCooldown(e.target.value); setPreview(null); }} />
-              <span>days</span>
-            </div>
+            {mode === 'segment' ? (
+              <>
+                <div className="space-y-1.5">
+                  {opts.segments.map((s) => (
+                    <label key={s.key} className={`flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer text-sm ${segment === s.key ? 'border-brand bg-brand/5' : 'border-line'}`}>
+                      <input type="radio" name="seg" checked={segment === s.key} onChange={() => { setSegment(s.key); setPreview(null); }} />
+                      <span className="flex-1">{s.label}</span>
+                      <span className="font-bold text-brand">{s.count}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-sm">
+                  <span>Skip anyone messaged in the last</span>
+                  <input type="number" min="0" max="90" className="input w-20 text-center" value={cooldown}
+                         onChange={(e) => { setCooldown(e.target.value); setPreview(null); }} />
+                  <span>days</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <textarea rows={4} className="input font-mono text-sm"
+                          placeholder={'Enter mobile numbers — one per line or comma-separated\n9886122415\n8618592876'}
+                          value={mobiles}
+                          onChange={(e) => { setMobiles(e.target.value); setPreview(null); }} />
+                <p className="text-[11px] text-muted mt-1.5">
+                  10-digit numbers. Known parents get their first name; unknown numbers get a generic greeting.
+                  Anyone who replied STOP is always skipped.
+                </p>
+              </>
+            )}
           </div>
 
           <button className="btn-sec w-full" disabled={!canPreview || busy} onClick={doPreview}>
@@ -156,14 +192,14 @@ export default function Broadcast() {
         <div className="card p-5">
           <h2 className="font-bold text-brand mb-3">Before you send</h2>
           {!preview && !result && (
-            <p className="text-sm text-muted">Pick a segment and tap <b>Preview recipients</b> to see who's in and who's skipped.</p>
+            <p className="text-sm text-muted">Choose recipients and tap <b>Preview recipients</b> to see who's in and who's skipped.</p>
           )}
 
           {preview && (
             <div className="space-y-3">
-              <Row label="In segment" value={preview.total} />
-              <Row label="Skipped — no WhatsApp chat yet" value={preview.no_session} muted />
-              <Row label={`Skipped — messaged in last ${cooldown} days`} value={preview.skipped_cooldown} muted />
+              <Row label={preview.direct ? 'Numbers entered' : 'In segment'} value={preview.total} />
+              {!preview.direct && <Row label="Skipped — no WhatsApp chat yet" value={preview.no_session} muted />}
+              <Row label={preview.direct ? 'Skipped — replied STOP' : `Skipped — messaged in last ${cooldown} days`} value={preview.skipped_cooldown} muted />
               <div className="border-t border-line pt-3">
                 <Row label="Will receive it" value={preview.recipients} big />
               </div>

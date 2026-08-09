@@ -58,8 +58,10 @@ export default function Visitors() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Stat index={0} label="Views today" value={td.views}
               delta={td.vs_yesterday_pct} sub="vs yesterday" />
-        <Stat index={1} label="Visitors today" value={td.uniques} sub="unique browsers" />
-        <Stat index={2} label="WhatsApp clicks today" value={td.wa_clicks} tone="ink" />
+        <Stat index={1} label="Visitors today" value={td.uniques}
+              delta={td.uniques_vs_yesterday_pct} sub="vs yesterday" />
+        <Stat index={2} label="WhatsApp clicks today" value={td.wa_clicks} tone="ink"
+              delta={td.wa_vs_yesterday_pct} sub="vs yesterday" />
         <Stat index={3} label="Views this week" value={wk.views}
               delta={wk.change_pct} sub="vs previous week" />
         <Stat index={4} label="Total views" value={t.views}
@@ -85,7 +87,13 @@ export default function Visitors() {
                   <div className="flex items-center justify-between">
                     <span className="truncate text-ink">{s.source}</span>
                     <span className="font-bold text-brand ml-3 whitespace-nowrap">
-                      {s.views}{s.today ? <span className="text-muted font-normal"> · {s.today} today</span> : null}
+                      {s.views}
+                      {s.today ? <span className="text-muted font-normal"> · {s.today} today</span> : null}
+                      {s.today_vs_yesterday_pct != null && (
+                        <span className={`ml-1 font-semibold ${s.today_vs_yesterday_pct >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                          {s.today_vs_yesterday_pct >= 0 ? '▲' : '▼'}{Math.abs(s.today_vs_yesterday_pct)}%
+                        </span>
+                      )}
                     </span>
                   </div>
                   <div className="mt-1 h-1.5 rounded bg-line overflow-hidden">
@@ -117,7 +125,12 @@ export default function Visitors() {
       {grouped ? <VisitorGroups grouped={grouped} variant="table" /> : <div className="card p-6 text-sm text-muted">Loading…</div>}
 
       {/* Every recent visit with its full detail */}
-      <h2 className="font-bold text-brand mt-6 mb-3">Recent visitors</h2>
+      <div className="flex items-center justify-between mt-6 mb-3">
+        <h2 className="font-bold text-brand">Recent visitors</h2>
+        <span className="pill bg-emerald-50 text-emerald-700">
+          {td.views + td.wa_clicks} today · {td.uniques} unique
+        </span>
+      </div>
       <VisitorTable rows={recent} />
     </Page>
   );

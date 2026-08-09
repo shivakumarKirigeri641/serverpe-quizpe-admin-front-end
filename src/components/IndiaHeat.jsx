@@ -38,9 +38,11 @@ function HeatColumn({ title, rows, note }) {
 export default function IndiaHeat({ geo }) {
   if (!geo) return <div className="card p-6 text-sm text-muted">Loading map…</div>;
   const otherNote = geo.visitors_other ? `${geo.visitors_other} outside India` : '';
+  const todayNote = geo.visitors_today_other ? `${geo.visitors_today_other} outside India` : '';
   return (
-    <div className="grid md:grid-cols-2 gap-4">
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
       <HeatColumn title="Website visitors by state" rows={geo.visitors} note={otherNote} />
+      <HeatColumn title="Website visitors by state · today" rows={geo.visitors_today || []} note={todayNote} />
       <HeatColumn title="Enrolled families by state" rows={geo.families} />
     </div>
   );
