@@ -70,10 +70,7 @@ export default function Visitors() {
 
       <div className="grid lg:grid-cols-3 gap-4 mt-4">
         <div className="card p-5 lg:col-span-2">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-brand">Daily views</h2>
-            <span className="text-xs text-muted">green = WhatsApp clicks</span>
-          </div>
+          <h2 className="font-bold text-brand mb-3">Daily views</h2>
           <DailyChart daily={a.daily} />
         </div>
 
@@ -189,32 +186,48 @@ function prettyRef(s) {
   try { return new URL(s).hostname.replace(/^www\./, ''); } catch { return s; }
 }
 
-/** A compact SVG bar chart: views as bars, WhatsApp clicks stacked on top. */
+/** A compact bar chart: views as bars, WhatsApp taps stacked on top with a
+ *  visible count under each day, plus a total. */
 function DailyChart({ daily }) {
   if (!daily?.length) return <p className="text-sm text-muted py-8 text-center">No visits recorded yet.</p>;
   const max = Math.max(1, ...daily.map((d) => d.views));
-  const H = 160, barW = Math.min(46, Math.max(14, Math.floor(760 / daily.length) - 8));
+  const H = 160, barW = Math.min(46, Math.max(16, Math.floor(760 / daily.length) - 8));
+  const waTotal = daily.reduce((s, d) => s + (d.wa || 0), 0);
   return (
-    <div className="overflow-x-auto">
-      <div className="flex items-end gap-2" style={{ minHeight: H + 28 }}>
-        {daily.map((d) => {
-          const h = Math.round((d.views / max) * H);
-          const waH = d.views ? Math.round((d.wa / max) * H) : 0;
-          return (
-            <div key={d.day} className="flex flex-col items-center shrink-0" style={{ width: barW }}>
-              <div className="relative w-full flex flex-col justify-end" style={{ height: H }}>
-                {d.views > 0 && (
-                  <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-muted">
-                    {d.views}
-                  </span>
-                )}
-                <div className="w-full rounded-t bg-brand-accent/85" style={{ height: h || 2 }} />
-                {waH > 0 && <div className="w-full bg-emerald-500" style={{ height: waH }} title={`${d.wa} WhatsApp clicks`} />}
+    <div>
+      {/* legend + total taps */}
+      <div className="flex items-center gap-4 mb-3 text-[11px] text-muted">
+        <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-brand-accent/85" /> Views</span>
+        <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500" /> WhatsApp taps</span>
+        <span className="ml-auto font-semibold text-emerald-600">💬 {waTotal} taps in this period</span>
+      </div>
+      <div className="overflow-x-auto">
+        {/* pt-6 gives the value labels that sit above each bar room, so they
+            never ride up into the legend or the card's top border */}
+        <div className="flex items-end gap-2 pt-6" style={{ minHeight: H + 50 }}>
+          {daily.map((d) => {
+            const h = Math.round((d.views / max) * H);
+            const waH = d.views ? Math.round((d.wa / max) * H) : 0;
+            return (
+              <div key={d.day} className="flex flex-col items-center shrink-0" style={{ width: barW }}>
+                <div className="relative w-full flex flex-col justify-end" style={{ height: H }}>
+                  {d.views > 0 && (
+                    <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-muted">
+                      {d.views}
+                    </span>
+                  )}
+                  <div className="w-full rounded-t bg-brand-accent/85" style={{ height: h || 2 }} />
+                  {waH > 0 && <div className="w-full bg-emerald-500" style={{ height: waH }} title={`${d.wa} WhatsApp taps`} />}
+                </div>
+                <span className="text-[10px] text-muted mt-1 whitespace-nowrap">{fmtDay(d.day)}</span>
+                {/* visible WhatsApp tap count for the day */}
+                <span className={`text-[10px] font-bold whitespace-nowrap ${d.wa > 0 ? 'text-emerald-600' : 'text-transparent'}`}>
+                  💬 {d.wa || 0}
+                </span>
               </div>
-              <span className="text-[10px] text-muted mt-1 whitespace-nowrap">{fmtDay(d.day)}</span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
