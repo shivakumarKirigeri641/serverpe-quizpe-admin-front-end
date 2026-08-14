@@ -128,17 +128,32 @@ export default function Tonight() {
                   ? '0 0 0 3px rgba(16,185,129,.45)' : '0 1px 3px rgba(16,24,40,.06)',
               }}
               transition={{ delay: Math.min(i * 0.04, 0.4), duration: 0.35 }}
-              className={`rounded-2xl border-2 p-4 ${st.tone}`}
+              className={`relative overflow-hidden rounded-2xl border-2 p-4 ${st.tone}`}
             >
-              <div className="flex items-start gap-2 mb-2">
+              {/* Trial / paid ribbon across the top-right corner. */}
+              <span
+                className={`pointer-events-none absolute -right-9 top-4 w-32 rotate-45 py-1 text-center text-[10px] font-extrabold uppercase tracking-wider shadow ${
+                  r.is_trial ? 'bg-amber-400 text-amber-950' : 'bg-emerald-500 text-white'
+                }`}
+                title={r.plan_name || (r.is_trial ? 'Trial plan' : 'Paid plan')}
+              >
+                {r.is_trial ? 'Trial' : 'Paid'}
+              </span>
+
+              <div className="flex items-start gap-2 mb-2 pr-14">
                 <span className="text-lg">{st.icon}</span>
                 <div className="min-w-0 flex-1">
                   <div className="font-bold truncate">{r.student_name}</div>
                   <div className="text-[11px] text-muted truncate">
                     {r.board_code} · {r.grade_name}{r.school_name ? ` · ${r.school_name}` : ''}
                   </div>
+                  {r.state_name && (
+                    <div className="text-[11px] font-semibold text-slate-500 truncate">📍 {r.state_name}</div>
+                  )}
+                  <div className="mt-1.5">
+                    <span className={`pill text-white ${st.chip}`}>{st.label}</span>
+                  </div>
                 </div>
-                <span className={`pill text-white ${st.chip}`}>{st.label}</span>
               </div>
 
               {r.state === 'in_progress' && (
