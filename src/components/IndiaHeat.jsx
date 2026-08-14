@@ -44,6 +44,7 @@ export default function IndiaHeat({ geo }) {
       <HeatColumn title="Website visitors by state" rows={geo.visitors} note={otherNote} />
       <HeatColumn title="Website visitors by state · today" rows={geo.visitors_today || []} note={todayNote} />
       <HeatColumn title="Enrolled families by state" rows={geo.families} />
+      <HeatColumn title="Active families by state · trial & paid" rows={geo.families_active || []} note="live subscriptions" />
     </div>
   );
 }

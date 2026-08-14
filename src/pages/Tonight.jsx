@@ -165,11 +165,11 @@ export default function Tonight() {
                 <p className="text-xs text-red-700 font-semibold">Sent but never opened</p>
               )}
               {(r.state === 'waiting' || r.state === 'ready') && (
-                <p className="text-xs text-muted">Quiz opens at {r.quiz_time}</p>
+                <p className="text-xs text-muted">Open all day — not taken yet</p>
               )}
               {r.state === 'not_started' && (
                 <p className="text-xs text-amber-800 font-semibold">
-                  Quiz was due at {r.quiz_time} — not opened yet
+                  Open all day — not taken yet
                 </p>
               )}
 
