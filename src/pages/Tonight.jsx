@@ -120,7 +120,7 @@ export default function Tonight() {
           const pct = r.state === 'in_progress' && total ? Math.round((r.answered / total) * 100) : null;
           return (
             <motion.div
-              key={r.student_id}
+              key={r.tracker_id || `wait-${r.student_id}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{
                 opacity: 1, y: 0,
@@ -150,8 +150,14 @@ export default function Tonight() {
                   {r.state_name && (
                     <div className="text-[11px] font-semibold text-slate-500 truncate">📍 {r.state_name}</div>
                   )}
-                  <div className="mt-1.5">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                     <span className={`pill text-white ${st.chip}`}>{st.label}</span>
+                    {r.quiz_slot && (
+                      <span className={`pill ${r.quiz_slot >= 3 ? 'bg-violet-100 text-violet-700'
+                        : r.quiz_slot === 2 ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-600'}`}>
+                        Quiz {r.quiz_slot}{r.subject_code && r.subject_code !== 'MATHS' ? ` · ${r.subject_code}` : ''}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

@@ -76,6 +76,7 @@ export const Pill = ({ tone = 'grey', children }) => {
     amber: 'bg-amber-50 text-amber-700',
     red: 'bg-red-50 text-red-700',
     blue: 'bg-sky-50 text-sky-700',
+    purple: 'bg-violet-50 text-violet-700',
     grey: 'bg-line/60 text-muted',
   };
   return <span className={`pill ${tones[tone] || tones.grey}`}>{children}</span>;

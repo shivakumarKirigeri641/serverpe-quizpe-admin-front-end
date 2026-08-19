@@ -50,6 +50,11 @@ export default function QuizDetail() {
           <div className="text-3xl font-extrabold">{head.grade || '—'}</div>
         </div>
         <div className="ml-auto flex gap-2">
+          {head.quiz_slot && (
+            <Pill tone={head.quiz_slot >= 3 ? 'purple' : head.quiz_slot === 2 ? 'blue' : 'grey'}>
+              Quiz {head.quiz_slot} of day
+            </Pill>
+          )}
           <Pill tone={head.status_code === 'completed' ? 'green' : 'grey'}>{head.status_code}</Pill>
           <Pill tone="blue">{head.quiz_type}</Pill>
           {head.school_name && <Pill tone="grey">{head.school_name}</Pill>}

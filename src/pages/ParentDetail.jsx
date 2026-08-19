@@ -172,12 +172,17 @@ export default function ParentDetail() {
                       <p className="px-5 py-4 text-sm text-muted">No quizzes yet.</p>
                     ) : (
                       <table className="w-full border-collapse">
-                        <thead><tr>{['Date', 'Subject', 'Type', 'Status', 'Score', 'Grade', '']
+                        <thead><tr>{['Date', 'Quiz', 'Subject', 'Type', 'Status', 'Score', 'Grade', '']
                           .map((h) => <th key={h} className="th">{h}</th>)}</tr></thead>
                         <tbody>
                           {quizzes[s.id].map((q) => (
                             <tr key={q.id}>
                               <td className="td whitespace-nowrap">{q.quiz_date}</td>
+                              <td className="td">
+                                <Pill tone={q.quiz_slot >= 3 ? 'purple' : q.quiz_slot === 2 ? 'blue' : 'grey'}>
+                                  {q.quiz_slot ? `Quiz ${q.quiz_slot}` : '—'}
+                                </Pill>
+                              </td>
                               <td className="td">{q.subject_name}</td>
                               <td className="td text-xs">{q.quiz_type}</td>
                               <td className="td">
