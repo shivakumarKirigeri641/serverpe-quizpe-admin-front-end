@@ -10,7 +10,7 @@
  * thing they are for.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
@@ -94,10 +94,25 @@ export default function WhatsAppPage() {
                   <table className="w-full border-collapse">
                     <thead><tr>{head.map((h, i) => <th key={i} className="th">{h}</th>)}</tr></thead>
                     <tbody>
-                      {rows.map((s) => (
-                        <>
-                          <tr key={s.id} onClick={() => toggle(s.id)}
-                              className="cursor-pointer hover:bg-line/30 transition">
+                      {(() => {
+                        // Rows come newest-first (by last_inbound_at). Insert a bold
+                        // divider between TODAY's conversations and the earlier ones,
+                        // so today's activity is unmistakable at a glance.
+                        const todayStr = new Date().toDateString();
+                        const isToday = (x) => x.last_inbound_at && new Date(x.last_inbound_at).toDateString() === todayStr;
+                        const firstEarlier = rows.findIndex((x) => !isToday(x));
+                        return rows.map((s, i) => (
+                        <Fragment key={s.id}>
+                          {i === firstEarlier && firstEarlier > 0 && (
+                            <tr>
+                              <td colSpan={head.length}
+                                  className="border-y-2 border-brand-accent bg-brand-accent/10 px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-brand-accent">
+                                ⬆ Today &nbsp;·&nbsp; earlier conversations below ⬇
+                              </td>
+                            </tr>
+                          )}
+                          <tr onClick={() => toggle(s.id)}
+                              className={`cursor-pointer transition ${isToday(s) ? 'bg-emerald-50/40 hover:bg-emerald-50' : 'hover:bg-line/30'}`}>
                             <td className="td">
                               <span className={`inline-block transition-transform ${open === s.id ? 'rotate-90' : ''}`}>▶</span>
                             </td>
@@ -118,14 +133,15 @@ export default function WhatsAppPage() {
                           </tr>
 
                           {open === s.id && (
-                            <tr key={`${s.id}-thread`}>
+                            <tr>
                               <td colSpan={head.length} className="p-0 border-t border-line">
                                 <Thread data={thread[s.id]} session={s} />
                               </td>
                             </tr>
                           )}
-                        </>
-                      ))}
+                        </Fragment>
+                      ));
+                      })()}
                       {!rows.length && (
                         <tr><td className="td text-center text-muted" colSpan={head.length}>
                           No conversations match that search.

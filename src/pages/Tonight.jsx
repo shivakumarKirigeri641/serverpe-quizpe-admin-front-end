@@ -147,8 +147,12 @@ export default function Tonight() {
                   <div className="text-[11px] text-muted truncate">
                     {r.board_code} · {r.grade_name}{r.school_name ? ` · ${r.school_name}` : ''}
                   </div>
-                  {r.state_name && (
-                    <div className="text-[11px] font-semibold text-slate-500 truncate">📍 {r.state_name}</div>
+                  {(r.state_name || r.plan_end_date) && (
+                    <div className="text-[11px] font-semibold text-slate-500 truncate">
+                      {r.state_name ? `📍 ${r.state_name}` : ''}
+                      {r.state_name && r.plan_end_date ? ' · ' : ''}
+                      {r.plan_end_date ? `🗓️ Expires ${new Date(r.plan_end_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}
+                    </div>
                   )}
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                     <span className={`pill text-white ${st.chip}`}>{st.label}</span>
