@@ -26,6 +26,7 @@ import Settings from './pages/Settings.jsx';
 import LiveFeed from './pages/LiveFeed.jsx';
 import Questions from './pages/Questions.jsx';
 import Tonight from './pages/Tonight.jsx';
+import QuickQuiz from './pages/QuickQuiz.jsx';
 import WhatsAppPage from './pages/WhatsApp.jsx';
 import Inbox from './pages/Inbox.jsx';
 import Visitors from './pages/Visitors.jsx';
@@ -44,6 +45,7 @@ const NAV = [
   { to: '/tonight', label: 'Tonight (live)', icon: '🟢' },
   { to: '/live', label: 'Live activity', icon: '📡' },
   { to: '/analytics', label: 'Analytics', icon: '📈' },
+  { to: '/quick-quiz', label: 'Quick Quiz', icon: '⚡' },
   { to: '/visitors', label: 'Visitors', icon: '🌐' },
   { to: '/parents', label: 'Parents & students', icon: '👨‍👩‍👧' },
   { to: '/whatsapp', label: 'Conversations', icon: '💬' },
@@ -115,6 +117,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/tonight" element={<Tonight />} />
+                <Route path="/quick-quiz" element={<QuickQuiz />} />
                 <Route path="/live" element={<LiveFeed />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/visitors" element={<Visitors />} />

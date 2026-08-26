@@ -77,9 +77,13 @@ async function request(path, { method = 'GET', body, signal, quiet = false } = {
 export const api = {
   requestOtp: (mobile) => request('/otp', { method: 'POST', body: { mobile } }),
   login: (mobile, code) => request('/login', { method: 'POST', body: { mobile, code } }),
+  loginPassword: (password) => request('/login-password', { method: 'POST', body: { password } }),
   me: () => request('/me'),
 
   dashboard: () => request('/dashboard'),
+  quickQuiz: () => request('/quick-quiz'),
+  instantConfig: () => request('/instant-config'),
+  saveInstantConfig: (body) => request('/instant-config', { method: 'PUT', body }),
   briefing: () => request('/briefing'),
   celebrations: () => request('/celebrations'),
   daily: (days = 30) => request(`/analytics/daily?days=${days}`),
