@@ -9,19 +9,9 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { api, download, getToken } from '../lib/api';
+import { api, download } from '../lib/api';
+import InvoiceActions from '../components/InvoiceActions.jsx';
 
-/** Open an admin PDF inline in a new tab — needs the Bearer token, so an
- *  <a href> can't be used; fetch the bytes and open a blob URL instead. */
-async function viewPdf(url) {
-  try {
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${getToken()}` } });
-    if (!res.ok) throw new Error('open failed');
-    const obj = URL.createObjectURL(await res.blob());
-    window.open(obj, '_blank', 'noopener');
-    setTimeout(() => URL.revokeObjectURL(obj), 60000);
-  } catch { /* ignore — the download button is the reliable path */ }
-}
 import { Page, Loading, ErrorBox, Stat, inr } from '../components/ui.jsx';
 import MoneyView from '../components/MoneyView.jsx';
 
@@ -141,10 +131,7 @@ export default function Finance() {
                   <td className="td">{inr(i.igst)}</td>
                   <td className="td font-bold">{inr(i.total)}</td>
                   <td className="td whitespace-nowrap">
-                    <button onClick={() => viewPdf(api.invoiceViewUrl(i.id))}
-                            className="text-brand-accent hover:underline text-xs font-semibold mr-3">View</button>
-                    <button onClick={() => download(api.invoiceDownloadUrl(i.id), `QuizPe-Invoice-${i.invoice_id}.pdf`)}
-                            className="text-brand hover:underline text-xs font-semibold">⬇ Download</button>
+                    <InvoiceActions id={i.id} invoiceId={i.invoice_id} />
                   </td>
                 </tr>
               ))}

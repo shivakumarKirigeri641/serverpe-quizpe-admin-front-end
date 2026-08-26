@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { Page, Loading, ErrorBox } from '../components/ui.jsx';
+import InvoiceActions from '../components/InvoiceActions.jsx';
 
 const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
@@ -185,6 +186,41 @@ export default function QuickQuiz() {
                 </tr>
               ))}
               {d.recent.length === 0 && <tr><td colSpan={6} className="px-3 py-8 text-center text-muted">No instant quizzes yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Invoices. Listed separately from the quizzes above because the payment
+          happens BEFORE the quiz exists, so there is no row that is both — and
+          for GST these are the rows that matter. */}
+      <h3 className="mb-2 mt-6 text-xs font-bold uppercase tracking-wider text-muted">Instant quiz invoices</h3>
+      <div className="rounded-2xl border border-line bg-white overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead><tr className="bg-line/30 text-left text-[11px] uppercase tracking-wider text-muted">
+              {['Invoice', 'Parent', 'Mobile', 'Base', 'GST', 'Total', 'When', 'PDF'].map((h) => (
+                <th key={h} className="px-3 py-2 whitespace-nowrap">{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {(d.invoices || []).map((v) => (
+                <tr key={v.id} className="border-t border-line/60">
+                  <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{v.invoice_id}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{v.parent_name}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{v.mobile}</td>
+                  <td className="px-3 py-2 whitespace-nowrap tabular-nums">₹{Number(v.amount_base).toFixed(2)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap tabular-nums text-muted">
+                    ₹{(Number(v.cgst) + Number(v.sgst) + Number(v.igst)).toFixed(2)}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap font-bold tabular-nums">₹{Number(v.total).toFixed(2)}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{v.at}</td>
+                  <td className="px-3 py-2"><InvoiceActions id={v.id} invoiceId={v.invoice_id} /></td>
+                </tr>
+              ))}
+              {(!d.invoices || d.invoices.length === 0) && (
+                <tr><td colSpan={8} className="px-3 py-8 text-center text-muted">No instant quiz invoices yet.</td></tr>
+              )}
             </tbody>
           </table>
         </div>

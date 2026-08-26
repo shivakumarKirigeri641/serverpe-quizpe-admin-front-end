@@ -214,6 +214,22 @@ export const api = {
  * Downloads need the token too, and an <a href> cannot send headers — so fetch
  * the bytes, then hand the browser a blob.
  */
+/**
+ * Open an admin PDF inline in a new tab. An <a href> cannot carry the Bearer
+ * token, so fetch the bytes and open a blob URL instead. Shared by every page
+ * that shows an invoice or report, so the behaviour stays identical wherever a
+ * PDF is opened.
+ */
+export async function viewPdf(url) {
+  try {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${getToken()}` } });
+    if (!res.ok) throw new Error('open failed');
+    const obj = URL.createObjectURL(await res.blob());
+    window.open(obj, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(obj), 60000);
+  } catch { /* ignore — download is the reliable path */ }
+}
+
 export async function download(url, filename) {
   const res = await fetch(url, { headers: { Authorization: `Bearer ${getToken()}` } });
   if (!res.ok) throw new Error('Download failed.');

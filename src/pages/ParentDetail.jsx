@@ -18,6 +18,7 @@ import DangerZone from '../components/DangerZone.jsx';
 import EditParent from '../components/EditParent.jsx';
 import { Page, Loading, ErrorBox, Pill, inr } from '../components/ui.jsx';
 import { toast } from '../components/Toaster.jsx';
+import InvoiceActions from '../components/InvoiceActions.jsx';
 
 /** Whole days from today to an expiry date (YYYY-MM-DD). */
 const daysLeft = (end) => Math.round(
@@ -118,9 +119,12 @@ export default function ParentDetail() {
         <div className="card p-5">
           <h3 className="font-bold text-brand mb-3">Invoices</h3>
           {invoices.length ? invoices.map((i) => (
-            <div key={i.id} className="flex items-center justify-between border-b border-line/60 py-2 text-sm">
+            <div key={i.id} className="flex items-center justify-between border-b border-line/60 py-2 text-sm gap-3">
               <span className="font-mono text-xs">{i.invoice_id}</span>
-              <b>{inr(i.total)}</b>
+              <span className="flex items-center gap-3">
+                <b>{inr(i.total)}</b>
+                <InvoiceActions id={i.id} invoiceId={i.invoice_id} />
+              </span>
             </div>
           )) : <p className="text-sm text-muted">No invoices — trial only.</p>}
         </div>
