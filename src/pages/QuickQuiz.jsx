@@ -6,7 +6,7 @@
  * a recent list. Refreshes every 15s so it doubles as a live board.
  */
 import { useEffect, useState } from 'react';
-import { api } from '../lib/api';
+import { api, download, viewPdf } from '../lib/api';
 import { Page, Loading, ErrorBox } from '../components/ui.jsx';
 import InvoiceActions from '../components/InvoiceActions.jsx';
 
@@ -227,12 +227,126 @@ function ListCard({ title, rows, empty }) {
   );
 }
 
+/** Open / download the PDF report a parent received for one quiz. */
+function ReportActions({ reportId }) {
+  if (!reportId) return <span className="text-xs text-muted">—</span>;
+  return (
+    <span className="whitespace-nowrap">
+      <button onClick={() => viewPdf(api.reportViewUrl(reportId))}
+              className="text-brand-accent hover:underline text-xs font-semibold mr-3">View</button>
+      <button onClick={() => download(api.reportDownloadUrl(reportId), `QuizPe-Report-${reportId}.pdf`)}
+              className="text-brand hover:underline text-xs font-semibold">⬇ PDF</button>
+    </span>
+  );
+}
+
+/** A child's score history as a small bar run — oldest to newest, left to right. */
+function ScoreTrend({ rows }) {
+  const pts = rows.filter((r) => r.score_pct != null).slice().reverse();
+  if (!pts.length) return <p className="text-sm text-muted">No completed quizzes yet.</p>;
+  return (
+    <div>
+      <div className="flex h-24 items-end gap-1.5">
+        {pts.map((r, i) => (
+          <div key={i} className="group relative flex-1" title={`${r.started_at} — ${r.score_pct}%`}>
+            <div className={`w-full rounded-t ${r.score_pct >= 70 ? 'bg-emerald-400' : r.score_pct >= 40 ? 'bg-amber-400' : 'bg-red-400'}`}
+                 style={{ height: `${Math.max(4, r.score_pct)}%` }} />
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 flex justify-between text-[10px] text-muted">
+        <span>{pts[0]?.started_at}</span><span>{pts[pts.length - 1]?.started_at}</span>
+      </div>
+    </div>
+  );
+}
+
+/** Drill-down: one child's complete instant-quiz history. */
+function ChildPanel({ studentId, onClose }) {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    setD(null);
+    api.quickQuizStudent(studentId).then(setD).catch((e) => setErr(e.message));
+  }, [studentId]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 overflow-y-auto"
+         onClick={onClose}>
+      <div className="mt-10 w-full max-w-3xl rounded-2xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        {err && <ErrorBox error={err} onRetry={onClose} />}
+        {!d && !err && <Loading label="Loading history…" />}
+        {d && (
+          <>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-extrabold text-ink">{d.student.student_name}</h3>
+                <p className="text-xs text-muted">
+                  {d.student.board_code} · {d.student.grade_name} · {d.student.medium_code}
+                  {d.student.school_name ? ` · ${d.student.school_name}` : ''}
+                </p>
+                <p className="text-xs text-muted">{d.student.parent_name} · {d.student.mobile}</p>
+              </div>
+              <button onClick={onClose} className="rounded-lg px-2 py-1 text-sm font-bold text-muted hover:bg-line/40">✕</button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+              {[['Quizzes', d.totals.quizzes], ['Completed', d.totals.completed],
+                ['Avg score', `${d.totals.avg_score}%`], ['Best', `${d.totals.best_score}%`],
+                ['Spent', `₹${Number(d.totals.spent || 0).toFixed(2)}`]].map(([k, v]) => (
+                <div key={k} className="rounded-xl bg-line/30 p-2.5 text-center">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted">{k}</div>
+                  <div className="text-lg font-extrabold text-ink">{v}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-xl border border-line p-3">
+              <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">Score over time</div>
+              <ScoreTrend rows={d.quizzes} />
+            </div>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead><tr className="bg-line/30 text-left text-[11px] uppercase tracking-wider text-muted">
+                  {['#', 'Started', 'Status', 'Answered', 'Score', 'Took', 'Report'].map((h) => (
+                    <th key={h} className="px-2 py-2 whitespace-nowrap">{h}</th>))}
+                </tr></thead>
+                <tbody>
+                  {d.quizzes.map((r, i) => (
+                    <tr key={r.tracker_id} className="border-t border-line/60">
+                      <td className="px-2 py-2 tabular-nums text-muted">{d.quizzes.length - i}</td>
+                      <td className="px-2 py-2 whitespace-nowrap">{r.started_at}</td>
+                      <td className="px-2 py-2 whitespace-nowrap">{STATUS_LABEL[r.status] || r.status}</td>
+                      <td className="px-2 py-2 tabular-nums">{r.answered}/{r.question_count}</td>
+                      <td className="px-2 py-2 tabular-nums font-bold">
+                        {r.score_total ? `${r.score_correct}/${r.score_total} (${r.score_pct}%)` : '—'}
+                      </td>
+                      <td className="px-2 py-2 tabular-nums text-muted">
+                        {r.status === 'completed' && r.seconds > 0
+                          ? (r.seconds < 3600 ? `${Math.round(r.seconds / 60)}m` : `${(r.seconds / 3600).toFixed(1)}h`)
+                          : '—'}
+                      </td>
+                      <td className="px-2 py-2"><ReportActions reportId={r.report_id} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function QuickQuiz() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState('');
   // The range drives every windowed block. Kept in the URL-free local state and
   // re-fetched on change, so the 15s live refresh always honours the filter.
   const [range, setRange] = useState('7d');
+  const [child, setChild] = useState(null);   // drill-down: student_id
 
   const load = () => api.quickQuiz(range).then(setD).catch((e) => setErr(e.message));
   useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, [range]);
@@ -315,20 +429,29 @@ export default function QuickQuiz() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead><tr className="bg-line/30 text-left text-[11px] uppercase tracking-wider text-muted">
-              {['Child', 'Parent', 'Mobile', 'Status', 'Score', 'When'].map((h) => <th key={h} className="px-3 py-2 whitespace-nowrap">{h}</th>)}
+              {['Child', 'Parent', 'Mobile', 'Status', 'Score', 'When', 'Report'].map((h) => <th key={h} className="px-3 py-2 whitespace-nowrap">{h}</th>)}
             </tr></thead>
             <tbody>
               {d.recent.map((r, i) => (
                 <tr key={i} className="border-t border-line/60">
-                  <td className="px-3 py-2 font-semibold text-ink whitespace-nowrap">{r.student_name}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <button onClick={() => setChild(r.student_id)}
+                            className="font-semibold text-ink hover:text-brand hover:underline">
+                      {r.student_name}
+                    </button>
+                    <span className="ml-2 rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-700">
+                      #{r.nth}
+                    </span>
+                  </td>
                   <td className="px-3 py-2 text-muted whitespace-nowrap">{r.parent_name || '—'}</td>
                   <td className="px-3 py-2 text-muted whitespace-nowrap">{r.mobile}</td>
                   <td className="px-3 py-2 whitespace-nowrap">{STATUS_LABEL[r.status] || r.status}</td>
                   <td className="px-3 py-2 whitespace-nowrap font-semibold">{r.score_total ? `${r.score_correct}/${r.score_total} (${r.score_pct}%)` : '—'}</td>
                   <td className="px-3 py-2 text-muted whitespace-nowrap">{r.at}</td>
+                  <td className="px-3 py-2"><ReportActions reportId={r.report_id} /></td>
                 </tr>
               ))}
-              {d.recent.length === 0 && <tr><td colSpan={6} className="px-3 py-8 text-center text-muted">No instant quizzes yet.</td></tr>}
+              {d.recent.length === 0 && <tr><td colSpan={7} className="px-3 py-8 text-center text-muted">No instant quizzes yet.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -382,6 +505,48 @@ export default function QuickQuiz() {
           </table>
         </div>
       </div>
+
+      {/* Every child who has ever bought one — the index you drill into. */}
+      <h3 className="mb-2 mt-6 text-xs font-bold uppercase tracking-wider text-muted">
+        Children who take quick quizzes ({(d.children || []).length})
+      </h3>
+      <div className="rounded-2xl border border-line bg-white overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead><tr className="bg-line/30 text-left text-[11px] uppercase tracking-wider text-muted">
+              {['Child', 'Class', 'Parent', 'Mobile', 'Quizzes', 'Done', 'Avg', 'Best', 'First', 'Last', ''].map((h) => (
+                <th key={h} className="px-3 py-2 whitespace-nowrap">{h}</th>))}
+            </tr></thead>
+            <tbody>
+              {(d.children || []).map((c) => (
+                <tr key={c.student_id} className="border-t border-line/60 hover:bg-line/10">
+                  <td className="px-3 py-2 font-semibold text-ink whitespace-nowrap">{c.student_name}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{c.board_code} · {c.grade_name}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{c.parent_name}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{c.mobile}</td>
+                  <td className="px-3 py-2 font-bold tabular-nums">{c.quizzes}</td>
+                  <td className="px-3 py-2 tabular-nums text-muted">{c.completed}</td>
+                  <td className="px-3 py-2 tabular-nums">{c.avg_score ? `${c.avg_score}%` : '—'}</td>
+                  <td className="px-3 py-2 tabular-nums">{c.best_score ? `${c.best_score}%` : '—'}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{c.first_at}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{c.last_at}</td>
+                  <td className="px-3 py-2">
+                    <button onClick={() => setChild(c.student_id)}
+                            className="text-xs font-semibold text-brand hover:underline whitespace-nowrap">
+                      History →
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {(!d.children || d.children.length === 0) && (
+                <tr><td colSpan={11} className="px-3 py-8 text-center text-muted">No children yet.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {child && <ChildPanel studentId={child} onClose={() => setChild(null)} />}
 
       {/* Invoices. Listed separately from the quizzes above because the payment
           happens BEFORE the quiz exists, so there is no row that is both — and

@@ -82,6 +82,11 @@ export const api = {
 
   dashboard: () => request('/dashboard'),
   quickQuiz: (range = '7d') => request(`/quick-quiz?range=${encodeURIComponent(range)}`),
+  quickQuizStudent: (id) => request(`/quick-quiz/student/${id}`),
+  freeQuizSearch: (q) => request(`/free-quiz/search?q=${encodeURIComponent(q)}`),
+  freeQuizGrants: () => request('/free-quiz/grants'),
+  freeQuizGrant: (body) => request('/free-quiz/grant', { method: 'POST', body }),
+  freeQuizCancel: (id) => request('/free-quiz/cancel', { method: 'POST', body: { id } }),
   instantConfig: () => request('/instant-config'),
   saveInstantConfig: (body) => request('/instant-config', { method: 'PUT', body }),
   briefing: () => request('/briefing'),
