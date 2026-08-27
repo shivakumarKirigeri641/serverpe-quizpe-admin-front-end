@@ -118,12 +118,124 @@ function ConfigCard() {
   );
 }
 
+/**
+ * Live board: every quick quiz currently open, newest first. `nth` is the one
+ * number that matters here — it says this is that child's 1st or 6th purchase,
+ * which is what tells you whether pay-per-quiz repeats.
+ */
+function LivePanel({ rows }) {
+  const mins = (s) => (s < 60 ? 'just now' : s < 3600 ? `${Math.floor(s / 60)}m ago` : `${Math.floor(s / 3600)}h ago`);
+  const ord = (n) => {
+    const v = Number(n) || 0, t = v % 100;
+    if (t >= 11 && t <= 13) return `${v}th`;
+    return `${v}${({ 1: 'st', 2: 'nd', 3: 'rd' })[v % 10] || 'th'}`;
+  };
+  return (
+    <div className="mt-4 rounded-2xl border-2 border-violet-200 bg-violet-50/40 p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-violet-600" />
+        </span>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-violet-800">
+          Taking a quick quiz now ({rows.length})
+        </span>
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted">Nobody is on a quick quiz right now.</p>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {rows.map((r) => (
+            <div key={r.tracker_id} className="rounded-xl border border-violet-200 bg-white p-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-bold text-ink">{r.student_name}</span>
+                <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">
+                  {ord(r.nth)} quiz
+                </span>
+              </div>
+              <div className="mt-0.5 text-xs text-muted">
+                {r.parent_name || '—'} · {r.mobile}
+              </div>
+              <div className="mt-0.5 text-xs text-muted">
+                {r.board_code} · {r.grade_name} · started {mins(r.age_seconds)}
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line/50">
+                  <div className="h-full rounded-full bg-violet-500"
+                       style={{ width: `${Math.round((r.answered / (r.question_count || 12)) * 100)}%` }} />
+                </div>
+                <span className="text-[11px] font-bold tabular-nums text-muted">
+                  {r.answered}/{r.question_count || 12}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** When quick quizzes are bought, by hour of day — drives nudge timing. */
+function HourChart({ rows }) {
+  const byHour = Array.from({ length: 24 }, (_, h) => {
+    const hit = rows.find((r) => Number(r.hour_of_day) === h);
+    return { h, n: hit ? hit.n : 0 };
+  });
+  const max = Math.max(1, ...byHour.map((b) => b.n));
+  const lbl = (h) => (h === 0 ? '12a' : h === 12 ? '12p' : h < 12 ? `${h}a` : `${h - 12}p`);
+  return (
+    <div className="rounded-2xl border border-line bg-white p-4">
+      <div className="mb-3 text-[11px] font-bold uppercase tracking-wider text-muted">Purchases by hour</div>
+      <div className="flex h-28 items-end gap-[3px]">
+        {byHour.map((b) => (
+          <div key={b.h} className="group relative flex-1" title={`${lbl(b.h)} — ${b.n}`}>
+            <div className="w-full rounded-t bg-violet-400 transition-colors group-hover:bg-violet-600"
+                 style={{ height: `${Math.max(2, (b.n / max) * 100)}%` }} />
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 flex justify-between text-[10px] text-muted">
+        <span>12a</span><span>6a</span><span>12p</span><span>6p</span><span>11p</span>
+      </div>
+    </div>
+  );
+}
+
+/** A simple ranked key/value card. */
+function ListCard({ title, rows, empty }) {
+  const max = Math.max(1, ...rows.map((r) => r.v));
+  return (
+    <div className="rounded-2xl border border-line bg-white p-4">
+      <div className="mb-3 text-[11px] font-bold uppercase tracking-wider text-muted">{title}</div>
+      {rows.length === 0 ? <p className="text-sm text-muted">{empty}</p> : (
+        <div className="space-y-2">
+          {rows.map((r) => (
+            <div key={r.k}>
+              <div className="flex items-baseline justify-between text-sm">
+                <span className="font-semibold text-ink">{r.k}</span>
+                <span className="font-bold tabular-nums text-muted">{r.v}</span>
+              </div>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-line/40">
+                <div className="h-full rounded-full bg-violet-400" style={{ width: `${(r.v / max) * 100}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function QuickQuiz() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState('');
+  // The range drives every windowed block. Kept in the URL-free local state and
+  // re-fetched on change, so the 15s live refresh always honours the filter.
+  const [range, setRange] = useState('7d');
 
-  const load = () => api.quickQuiz().then(setD).catch((e) => setErr(e.message));
-  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
+  const load = () => api.quickQuiz(range).then(setD).catch((e) => setErr(e.message));
+  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, [range]);
 
   if (err) return <ErrorBox error={err} onRetry={load} />;
   if (!d) return <Loading label="Loading Quick Quiz…" />;
@@ -133,6 +245,37 @@ export default function QuickQuiz() {
       actions={<span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700">⚡ Instant</span>}>
 
       <ConfigCard />
+
+      {/* LIVE — who is on a quick quiz right now, and which number it is for them */}
+      <LivePanel rows={d.live || []} />
+
+      {/* range filter — everything below the fixed today/week cards honours this */}
+      <div className="mt-5 flex flex-wrap items-center gap-2">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Range</span>
+        {(d.ranges || []).map((r) => (
+          <button key={r.key} onClick={() => setRange(r.key)}
+                  className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                    range === r.key ? 'bg-violet-600 text-white' : 'bg-line/40 text-muted hover:bg-line/70'}`}>
+            {r.label}
+          </button>
+        ))}
+      </div>
+
+      {/* the selected window, against the same-length window before it */}
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label={`Quizzes · ${d.range_label}`} value={d.rangeStats?.quizzes}
+                  prev={d.rangeStats?.prev_quizzes} prevLabel="previous period" />
+        <StatCard label={`Revenue · ${d.range_label}`} value={d.rangeStats?.revenue} money />
+        <StatCard label="Completion rate" value={`${d.rangeStats?.completion_pct ?? 0}%`} />
+        <StatCard label="Average score" value={`${d.rangeStats?.avg_score ?? 0}%`} />
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Children who bought" value={d.repeat?.buyers} />
+        <StatCard label="Repeat buyers" value={d.repeat?.repeat_buyers} />
+        <StatCard label="Avg quizzes / child" value={d.repeat?.avg_per_child} />
+        <StatCard label="Most by one child" value={d.repeat?.max_per_child} />
+      </div>
 
       {/* today */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -152,7 +295,7 @@ export default function QuickQuiz() {
       <div className="mt-4 grid gap-3 lg:grid-cols-[2fr_1fr]">
         <Trend rows={d.trend} />
         <div className="rounded-2xl border border-line bg-white p-4">
-          <div className="mb-3 text-[11px] font-bold uppercase tracking-wider text-muted">Status (last 30 days)</div>
+          <div className="mb-3 text-[11px] font-bold uppercase tracking-wider text-muted">Status · {d.range_label}</div>
           {d.status.length === 0 ? <p className="text-sm text-muted">No instant quizzes yet.</p> : (
             <div className="space-y-2">
               {d.status.map((s) => (
@@ -186,6 +329,55 @@ export default function QuickQuiz() {
                 </tr>
               ))}
               {d.recent.length === 0 && <tr><td colSpan={6} className="px-3 py-8 text-center text-muted">No instant quizzes yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* demand + timing + funnel */}
+      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+        <HourChart rows={d.byHour || []} />
+        <ListCard title="Board / grade demand" rows={(d.byGrade || []).map((g) => ({
+          k: `${g.board_code} · ${g.grade_name}`, v: g.n }))} empty="No quizzes in this range." />
+        <div className="rounded-2xl border border-line bg-white p-4">
+          <div className="mb-3 text-[11px] font-bold uppercase tracking-wider text-muted">Instant → plan funnel</div>
+          <div className="text-3xl font-extrabold text-ink">
+            {d.conversion?.now_subscribed ?? 0}
+            <span className="text-base font-bold text-muted"> / {d.conversion?.instant_parents ?? 0}</span>
+          </div>
+          <p className="mt-1 text-xs text-muted">
+            parents who bought a quick quiz in this range and now hold a paid plan
+          </p>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-line/40">
+            <div className="h-full rounded-full bg-violet-500"
+                 style={{ width: `${d.conversion?.instant_parents
+                   ? Math.round((d.conversion.now_subscribed / d.conversion.instant_parents) * 100) : 0}%` }} />
+          </div>
+        </div>
+      </div>
+
+      {/* who buys the most */}
+      <h3 className="mb-2 mt-6 text-xs font-bold uppercase tracking-wider text-muted">Top families · {d.range_label}</h3>
+      <div className="rounded-2xl border border-line bg-white overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead><tr className="bg-line/30 text-left text-[11px] uppercase tracking-wider text-muted">
+              {['Child', 'Parent', 'Mobile', 'Quizzes', 'Avg score'].map((h) => (
+                <th key={h} className="px-3 py-2 whitespace-nowrap">{h}</th>))}
+            </tr></thead>
+            <tbody>
+              {(d.topBuyers || []).map((r, i) => (
+                <tr key={i} className="border-t border-line/60">
+                  <td className="px-3 py-2 font-semibold text-ink whitespace-nowrap">{r.student_name}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{r.parent_name || '—'}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{r.mobile}</td>
+                  <td className="px-3 py-2 font-bold tabular-nums">{r.quizzes}</td>
+                  <td className="px-3 py-2 tabular-nums">{r.avg_score ? `${r.avg_score}%` : '—'}</td>
+                </tr>
+              ))}
+              {(!d.topBuyers || d.topBuyers.length === 0) && (
+                <tr><td colSpan={5} className="px-3 py-8 text-center text-muted">No quizzes in this range.</td></tr>
+              )}
             </tbody>
           </table>
         </div>

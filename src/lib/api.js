@@ -81,7 +81,7 @@ export const api = {
   me: () => request('/me'),
 
   dashboard: () => request('/dashboard'),
-  quickQuiz: () => request('/quick-quiz'),
+  quickQuiz: (range = '7d') => request(`/quick-quiz?range=${encodeURIComponent(range)}`),
   instantConfig: () => request('/instant-config'),
   saveInstantConfig: (body) => request('/instant-config', { method: 'PUT', body }),
   briefing: () => request('/briefing'),
