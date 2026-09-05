@@ -27,13 +27,15 @@ export default function Parents() {
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [filter, setFilter] = useState('all');
+  // Expiry-first by default: this list is worked for renewals.
+  const [sort, setSort] = useState('expiry_desc');
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const LIMIT = 25;
 
   const load = () => {
     setError('');
-    api.parents({ q, limit: LIMIT, offset, filter })
+    api.parents({ q, limit: LIMIT, offset, filter, sort })
       .then((d) => { setRows(d.rows); setTotal(d.total); })
       .catch((e) => setError(e.message));
   };
@@ -42,13 +44,21 @@ export default function Parents() {
   useEffect(() => {
     const t = setTimeout(load, q ? 300 : 0);
     return () => clearTimeout(t);
-  }, [q, offset, filter]);
+  }, [q, offset, filter, sort]);
 
   const FILTERS = [
     { key: 'all', label: 'All' },
     { key: 'active', label: 'Active' },
     { key: 'expiring', label: 'Expiring ≤7d' },
     { key: 'lapsed', label: 'Lapsed (not renewed)' },
+  ];
+
+  // 'Expiring ≤7d' has its own fixed ordering (soonest first), so the sort
+  // control is hidden there rather than silently ignored.
+  const SORTS = [
+    { key: 'expiry_desc', label: 'Expiry ↓ latest first' },
+    { key: 'expiry_asc', label: 'Expiry ↑ soonest first' },
+    { key: 'newest', label: 'Newest signup' },
   ];
 
   const head = ['Parent', 'Mobile', 'State', 'Children', 'Plan', 'Valid till', 'Status', 'Lifetime value'];
@@ -64,7 +74,7 @@ export default function Parents() {
         />
       }
     >
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         {FILTERS.map((f) => (
           <button key={f.key}
                   onClick={() => { setOffset(0); setFilter(f.key); }}
@@ -72,6 +82,18 @@ export default function Parents() {
             {f.label}
           </button>
         ))}
+        {filter !== 'expiring' && (
+          <label className="ml-auto flex items-center gap-2 text-sm text-muted">
+            Sort
+            <select
+              className="input py-1.5 text-sm"
+              value={sort}
+              onChange={(e) => { setOffset(0); setSort(e.target.value); }}
+            >
+              {SORTS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          </label>
+        )}
       </div>
       {error ? <ErrorBox error={error} onRetry={load} />
         : !rows ? <Loading label="Loading parents…" />

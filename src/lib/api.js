@@ -104,8 +104,8 @@ export const api = {
   feed: (limit = 50) => request(`/feed?limit=${limit}`),
   tonight: () => request('/tonight'),
 
-  parents: ({ q = '', limit = 25, offset = 0, filter = 'all' } = {}) =>
-    request(`/parents?q=${encodeURIComponent(q)}&limit=${limit}&offset=${offset}&filter=${filter}`),
+  parents: ({ q = '', limit = 25, offset = 0, filter = 'all', sort = 'expiry_desc' } = {}) =>
+    request(`/parents?q=${encodeURIComponent(q)}&limit=${limit}&offset=${offset}&filter=${filter}&sort=${sort}`),
   parent: (id) => request(`/parents/${id}`),
   lookups: () => request('/lookups'),
   updateParent: (id, body) => request(`/parents/${id}`, { method: 'PATCH', body }),
@@ -181,6 +181,8 @@ export const api = {
   broadcastOptions: () => request('/broadcast/options'),
   broadcastPreview: (body) => request('/broadcast/preview', { method: 'POST', body }),
   broadcastSend: (body) => request('/broadcast/send', { method: 'POST', body }),
+  broadcastSegmentPeople: (segment) =>
+    request(`/broadcast/segment-people?segment=${encodeURIComponent(segment)}`),
   broadcastDirect: (body) => request('/broadcast/direct', { method: 'POST', body }),
 
   holidays: (all = false) => request(`/holidays${all ? '?all=1' : ''}`),

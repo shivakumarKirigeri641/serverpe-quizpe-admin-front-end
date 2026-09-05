@@ -204,7 +204,10 @@ function prettyRef(s) {
 function DailyChart({ daily }) {
   if (!daily?.length) return <p className="text-sm text-muted py-8 text-center">No visits recorded yet.</p>;
   const max = Math.max(1, ...daily.map((d) => d.views));
-  const H = 160, barW = Math.min(46, Math.max(16, Math.floor(760 / daily.length) - 8));
+  // A "05 Sep" label is ~34px wide at 10px, so a 16px column made the dates
+  // overlap into an unreadable smear. The floor is now wide enough for a
+  // 45°-rotated label, and the row scrolls sideways rather than compressing.
+  const H = 160, barW = Math.min(46, Math.max(26, Math.floor(760 / daily.length) - 8));
   const waTotal = daily.reduce((s, d) => s + (d.wa || 0), 0);
   return (
     <div>
@@ -232,7 +235,15 @@ function DailyChart({ daily }) {
                   <div className="w-full rounded-t bg-brand-accent/85" style={{ height: h || 2 }} />
                   {waH > 0 && <div className="w-full bg-emerald-500" style={{ height: waH }} title={`${d.wa} WhatsApp taps`} />}
                 </div>
-                <span className="text-[10px] text-muted mt-1 whitespace-nowrap">{fmtDay(d.day)}</span>
+                {/* Rotated so a full date fits under a narrow bar. The fixed
+                    height reserves room for the diagonal, so the tap count
+                    below still lines up across every column. */}
+                <span className="h-9 w-full flex justify-center items-start overflow-visible">
+                  <span
+                    className="text-[10px] text-muted whitespace-nowrap origin-top-right -rotate-45 mt-1"
+                    style={{ transformOrigin: '100% 0' }}
+                  >{fmtDay(d.day)}</span>
+                </span>
                 {/* visible WhatsApp tap count for the day */}
                 <span className={`text-[10px] font-bold whitespace-nowrap ${d.wa > 0 ? 'text-emerald-600' : 'text-transparent'}`}>
                   💬 {d.wa || 0}

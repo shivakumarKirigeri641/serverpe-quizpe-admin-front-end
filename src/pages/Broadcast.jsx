@@ -22,8 +22,13 @@ export default function Broadcast() {
   const [busy, setBusy] = useState('');
   const [result, setResult] = useState(null);
   const [pvals, setPvals] = useState([]);   // admin-typed values for {{2}}..{{n}}
-  const [mode, setMode] = useState('segment');   // 'segment' | 'numbers'
+  const [mode, setMode] = useState('segment');   // 'segment' | 'pick' | 'numbers'
   const [mobiles, setMobiles] = useState('');    // free-typed numbers for direct send
+  // 'pick' mode: choose a category, then tick the individuals inside it.
+  const [pickSeg, setPickSeg] = useState('');
+  const [people, setPeople] = useState(null);
+  const [checked, setChecked] = useState({});    // mobile -> true
+  const [loadingPeople, setLoadingPeople] = useState(false);
 
   /** A template's variables array, tolerant of json/text storage. */
   const varsOf = (t) => !t ? []
@@ -34,10 +39,34 @@ export default function Broadcast() {
     api.broadcastOptions().then(setOpts).catch((e) => setError(e.message));
   }, []);
 
+  /** Load the people in a category so individuals can be ticked. */
+  const loadPeople = async (seg) => {
+    setPickSeg(seg); setPeople(null); setChecked({}); setPreview(null); setMobiles('');
+    if (!seg) return;
+    setLoadingPeople(true);
+    try {
+      const d = await api.broadcastSegmentPeople(seg);
+      setPeople(d.rows);
+      // Pre-tick everyone who can actually be reached — the common case is
+      // "all of them except a few", not starting from an empty list.
+      const pre = {};
+      d.rows.forEach((r) => { if (!r.paused) pre[r.mobile] = true; });
+      setChecked(pre);
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setLoadingPeople(false); }
+  };
+
+  // 'pick' feeds the same direct-send path as typed numbers, so STOP handling,
+  // the dry-run preview and the send log all behave identically.
+  const pickedMobiles = Object.keys(checked).filter((m) => checked[m]);
+  useEffect(() => {
+    if (mode === 'pick') setMobiles(pickedMobiles.join(','));
+  }, [checked, mode]);
+
   const doPreview = async () => {
     setBusy('preview'); setResult(null); setPreview(null);
     try {
-      if (mode === 'numbers') {
+      if (mode !== 'segment') {
         const d = await api.broadcastDirect({ template, params: pvals, mobiles, dryRun: true });
         setPreview({ total: d.total, no_session: 0, skipped_cooldown: d.paused,
           recipients: d.total - d.paused, direct: true,
@@ -50,11 +79,11 @@ export default function Broadcast() {
   };
 
   const doSend = async () => {
-    const who = mode === 'numbers' ? `${preview.recipients} number(s)` : `${preview.recipients} parent(s) in "${segment}"`;
+    const who = mode !== 'segment' ? `${preview.recipients} number(s)` : `${preview.recipients} parent(s) in "${segment}"`;
     if (!confirm(`Send "${template}" to ${who}? This messages real people.`)) return;
     setBusy('send');
     try {
-      const r = mode === 'numbers'
+      const r = mode !== 'segment'
         ? await api.broadcastDirect({ template, params: pvals, mobiles })
         : await api.broadcastSend({ template, segment, cooldownDays: Number(cooldown), params: pvals });
       setResult(r);
@@ -142,7 +171,7 @@ export default function Broadcast() {
           <div>
             <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">Who gets it</label>
             <div className="flex gap-1 mb-3">
-              {[['segment', 'A segment'], ['numbers', 'Specific numbers']].map(([k, label]) => (
+              {[['segment', 'A segment'], ['pick', 'Pick people'], ['numbers', 'Specific numbers']].map(([k, label]) => (
                 <button key={k} type="button"
                         onClick={() => { setMode(k); setPreview(null); }}
                         className={`text-sm px-3 py-1.5 rounded-lg font-semibold transition ${mode === k ? 'bg-brand text-white' : 'text-muted hover:bg-slate-100'}`}>
@@ -151,7 +180,78 @@ export default function Broadcast() {
               ))}
             </div>
 
-            {mode === 'segment' ? (
+            {mode === 'pick' ? (
+              <>
+                {/* 1 — the category */}
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {opts.segments.map((sg) => (
+                    <button key={sg.key} type="button"
+                            onClick={() => loadPeople(sg.key)}
+                            className={`text-sm px-3 py-1.5 rounded-lg font-semibold border transition ${
+                              pickSeg === sg.key ? 'bg-brand text-white border-brand' : 'border-line text-muted hover:bg-slate-50'}`}>
+                      {sg.label} <span className="opacity-70">({sg.count})</span>
+                    </button>
+                  ))}
+                </div>
+
+                {loadingPeople && <p className="text-sm text-muted py-4">Loading people…</p>}
+
+                {!loadingPeople && people && !people.length && (
+                  <p className="text-sm text-muted py-4">Nobody is in that category right now.</p>
+                )}
+
+                {/* 2 — the individuals */}
+                {!loadingPeople && people && !!people.length && (
+                  <>
+                    <div className="flex items-center gap-2 mb-2 text-sm">
+                      <button type="button" className="btn-sec text-xs py-1"
+                              onClick={() => { const a = {}; people.forEach((r) => { if (!r.paused) a[r.mobile] = true; }); setChecked(a); setPreview(null); }}>
+                        Select all reachable
+                      </button>
+                      <button type="button" className="btn-sec text-xs py-1"
+                              onClick={() => { setChecked({}); setPreview(null); }}>
+                        Clear
+                      </button>
+                      <span className="ml-auto font-bold text-brand">{pickedMobiles.length} selected</span>
+                    </div>
+
+                    <div className="border border-line rounded-lg divide-y divide-line max-h-[420px] overflow-y-auto">
+                      {people.map((r) => (
+                        <label key={r.mobile}
+                               className={`flex items-start gap-2.5 px-3 py-2.5 text-sm cursor-pointer hover:bg-slate-50 ${
+                                 r.paused ? 'opacity-50' : ''}`}>
+                          <input type="checkbox" className="mt-1"
+                                 checked={!!checked[r.mobile]} disabled={r.paused}
+                                 onChange={(e) => { setChecked((c) => ({ ...c, [r.mobile]: e.target.checked })); setPreview(null); }} />
+                          <span className="min-w-0 flex-1">
+                            <span className="font-semibold">{r.name}</span>
+                            <span className="text-muted"> · {r.mobile}</span>
+                            {r.children && <span className="block text-[11px] text-muted truncate">👦 {r.children}</span>}
+                            <span className="block text-[11px] text-muted">
+                              {r.plan ? `${r.plan}${r.expiry ? ` · till ${r.expiry}` : ''}` : 'No plan'}
+                              {' · '}{r.quizzes_done} quiz{r.quizzes_done === 1 ? '' : 'zes'} done
+                              {r.last_quiz ? ` · last ${r.last_quiz}` : ' · never started'}
+                            </span>
+                            <span className="flex flex-wrap gap-1 mt-1">
+                              {r.paused && <em className="pill bg-red-50 text-red-700 not-italic">STOP — cannot message</em>}
+                              {!r.reachable && !r.paused && <em className="pill bg-amber-50 text-amber-700 not-italic">no chat yet</em>}
+                              {r.last_broadcast && (
+                                <em className="pill bg-slate-100 text-muted not-italic">
+                                  last messaged {new Date(r.last_broadcast).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                                </em>
+                              )}
+                            </span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-muted mt-1.5">
+                      Sorted by who was messaged longest ago. Anyone who replied STOP is locked out and can never be ticked.
+                    </p>
+                  </>
+                )}
+              </>
+            ) : mode === 'segment' ? (
               <>
                 <div className="space-y-1.5">
                   {opts.segments.map((s) => (
