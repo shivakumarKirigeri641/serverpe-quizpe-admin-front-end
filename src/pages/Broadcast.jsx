@@ -87,7 +87,12 @@ export default function Broadcast() {
         ? await api.broadcastDirect({ template, params: pvals, mobiles })
         : await api.broadcastSend({ template, segment, cooldownDays: Number(cooldown), params: pvals });
       setResult(r);
-      toast(`Sent — ${r.sent}${r.failed ? `, ${r.failed} failed` : ''}${r.skipped ? `, ${r.skipped} skipped (STOP)` : ''}.`, 'success');
+      // A run the server halted is not a success, whatever it managed first.
+      if (r.stopped) {
+        toast(`Stopped after ${r.sent} sent — ${r.not_attempted} not attempted. ${r.stopped}`, 'error');
+      } else {
+        toast(`Sent — ${r.sent}${r.failed ? `, ${r.failed} failed` : ''}${r.skipped ? `, ${r.skipped} skipped (STOP)` : ''}.`, 'success');
+      }
       setPreview(null);
     } catch (e) { toast(e.message, 'error'); }
     finally { setBusy(''); }
@@ -328,10 +333,40 @@ export default function Broadcast() {
             </div>
           )}
 
-          {result && (
+          {result && !result.stopped && (
             <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm">
               ✅ Broadcast complete — <b>{result.sent}</b> sent{result.failed ? `, ${result.failed} failed` : ''}.
               {result.note && <span className="text-muted"> {result.note}</span>}
+            </div>
+          )}
+
+          {/* The server stops a run rather than fail every remaining parent one
+              by one. Say so plainly: the people not attempted have NOT been
+              messaged, and nothing was logged for them, so once the cause is
+              fixed the same send can be repeated and will reach only them. */}
+          {result && result.stopped && (
+            <div className="rounded-xl bg-amber-50 border border-amber-300 p-4 text-sm space-y-1">
+              <div>⚠️ <b>Broadcast stopped</b> — <b>{result.sent}</b> sent, {result.failed} failed,
+                {' '}<b>{result.not_attempted}</b> not attempted.</div>
+              <div className="text-amber-900">Reason: {result.stopped}</div>
+              {mode === 'segment' ? (
+                <div className="text-muted">
+                  Fix the cause, then send again — the people already messaged are skipped
+                  by the cooldown, so only the remaining {result.not_attempted} will receive it.
+                </div>
+              ) : (
+                /* A pasted-list send has no cooldown: re-pasting the original list
+                   would message the first half twice. So hand back exactly the
+                   numbers that were never tried. */
+                <div className="space-y-1">
+                  <div className="text-muted">
+                    Fix the cause, then paste <b>only these {result.remaining?.length || 0} numbers</b> to
+                    send again — re-pasting your original list would message the others twice.
+                  </div>
+                  <textarea readOnly rows={3} className="input w-full font-mono text-xs"
+                            value={(result.remaining || []).join(', ')} />
+                </div>
+              )}
             </div>
           )}
         </div>
