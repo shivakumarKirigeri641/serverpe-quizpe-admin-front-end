@@ -87,6 +87,12 @@ export const api = {
   freeQuizGrants: () => request('/free-quiz/grants'),
   freeQuizGrant: (body) => request('/free-quiz/grant', { method: 'POST', body }),
   freeQuizCancel: (id) => request('/free-quiz/cancel', { method: 'POST', body: { id } }),
+
+  // Free access — quizzes at no charge for a date range (see pages/FreeAccess).
+  freeAccessSearch: (q) => request(`/free-access/search?q=${encodeURIComponent(q)}`),
+  freeAccessList: () => request('/free-access/campaigns'),
+  freeAccessGrant: (body) => request('/free-access/grant', { method: 'POST', body }),
+  freeAccessCancel: (id) => request('/free-access/cancel', { method: 'POST', body: { id } }),
   instantConfig: () => request('/instant-config'),
   saveInstantConfig: (body) => request('/instant-config', { method: 'PUT', body }),
   briefing: () => request('/briefing'),

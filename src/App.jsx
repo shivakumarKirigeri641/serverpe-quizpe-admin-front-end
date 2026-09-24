@@ -28,6 +28,7 @@ import Questions from './pages/Questions.jsx';
 import Tonight from './pages/Tonight.jsx';
 import QuickQuiz from './pages/QuickQuiz.jsx';
 import FreeQuizSlot from './pages/FreeQuizSlot.jsx';
+import FreeAccess from './pages/FreeAccess.jsx';
 import WhatsAppPage from './pages/WhatsApp.jsx';
 import Inbox from './pages/Inbox.jsx';
 import Visitors from './pages/Visitors.jsx';
@@ -48,6 +49,7 @@ const NAV = [
   { to: '/analytics', label: 'Analytics', icon: '📈' },
   { to: '/quick-quiz', label: 'Quick Quiz', icon: '⚡' },
   { to: '/free-quiz', label: 'Free quiz slot', icon: '🎁' },
+  { to: '/free-access', label: 'Free access', icon: '🗓️' },
   { to: '/visitors', label: 'Visitors', icon: '🌐' },
   { to: '/parents', label: 'Parents & students', icon: '👨‍👩‍👧' },
   { to: '/whatsapp', label: 'Conversations', icon: '💬' },
@@ -121,6 +123,7 @@ export default function App() {
                 <Route path="/tonight" element={<Tonight />} />
                 <Route path="/quick-quiz" element={<QuickQuiz />} />
                 <Route path="/free-quiz" element={<FreeQuizSlot />} />
+                <Route path="/free-access" element={<FreeAccess />} />
                 <Route path="/live" element={<LiveFeed />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/visitors" element={<Visitors />} />
