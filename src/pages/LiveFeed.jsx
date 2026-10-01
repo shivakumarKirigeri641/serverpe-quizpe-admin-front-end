@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { Page, Loading, ErrorBox, inr } from '../components/ui.jsx';
 
 const KIND = {
@@ -76,11 +77,9 @@ export default function LiveFeed() {
     })
     .catch((e) => setError(e.message));
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 12000);
-    return () => clearInterval(t);
-  }, []);
+  useEffect(() => { load(); }, []);
+  // Pace, quiet refetch and the quiz-window floor come from the hook now.
+  useAutoRefresh(load, 12000);
 
   if (error) return <ErrorBox error={error} onRetry={load} />;
   if (!rows) return <Loading label="Loading activity…" />;

@@ -21,3 +21,29 @@
   .pill    { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1
                     text-[11px] font-bold; }
 }
+
+/* ── The motion system's CSS half ────────────────────────────────────────────
+ * The JavaScript half is lib/motion.jsx, which stamps data-motion on <html>.
+ * Anything that animates in CSS is named here, so one preference can turn the
+ * whole panel still.
+ */
+@keyframes qp-slide   { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+@keyframes qp-breathe { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+@keyframes qp-spin    { to { transform: rotate(360deg); } }
+
+/* Reduced: things still move, but briefly and without sweeping. */
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after {
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 120ms !important;
+}
+
+/* Minimal: nothing moves at all. */
+:root[data-motion='minimal'] *,
+:root[data-motion='minimal'] *::before,
+:root[data-motion='minimal'] *::after {
+  animation: none !important;
+  transition: none !important;
+}

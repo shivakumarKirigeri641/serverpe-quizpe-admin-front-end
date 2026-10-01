@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { Page, Loading, ErrorBox, Pill } from '../components/ui.jsx';
 import VisitorGroups from '../components/VisitorGroups.jsx';
 
@@ -37,6 +38,7 @@ export default function Inbox() {
     fn().then(setData).catch((e) => setError(e.message));
   };
   useEffect(load, [tab]);
+  useAutoRefresh(load, 20000);
 
   const act = async (fn, id) => {
     setBusy(id);

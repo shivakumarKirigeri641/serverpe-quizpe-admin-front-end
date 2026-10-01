@@ -12,6 +12,8 @@
  * financial records, so it should not survive a closed browser.
  */
 
+import * as secure from './secure';
+
 const KEY = 'quizpe.admin.token';
 
 // Empty in development, where Vite proxies /admin/api to port 5008. In
@@ -30,11 +32,30 @@ export const setUnauthorizedHandler = (fn) => { onUnauthorized = fn; };
 // page wiring one up.
 let onToast = () => {};
 export const setToastHandler = (fn) => { onToast = fn; };
+
+/* ── Panel health & busy signal ──────────────────────────────────────────────
+ * The header needs two things this module already knows: whether a request is
+ * in flight (so a busy bar can show), and whether the last one reached the
+ * server at all (so the connection dot can go amber). Published here rather
+ * than threaded through every page.
+ */
+let inFlight = 0;
+let healthy = true;
+let lastOkAt = null;
+const busyWatchers = new Set();
+const healthWatchers = new Set();
+
+export const onBusyChange = (fn) => { busyWatchers.add(fn); fn(inFlight > 0); return () => busyWatchers.delete(fn); };
+export const onHealthChange = (fn) => { healthWatchers.add(fn); fn({ healthy, lastOkAt }); return () => healthWatchers.delete(fn); };
+
+/* A background refresh must not flash the busy bar — the rows simply change. */
+let silent = 0;
+export const quietly = async (fn) => { silent += 1; try { return await fn(); } finally { silent -= 1; } };
 // Auth flows have their own on-screen feedback (codes, PIN) — a toast there is
 // noise, so they are excluded from the automatic snackbars.
 const isAuthPath = (p) => /\/(login|otp)\b|request-otp/.test(p);
 
-async function request(path, { method = 'GET', body, signal, quiet = false } = {}) {
+async function rawRequest(path, { method = 'GET', body, signal, quiet = false } = {}) {
   const headers = { Accept: 'application/json' };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -43,6 +64,34 @@ async function request(path, { method = 'GET', body, signal, quiet = false } = {
   // A write (anything but GET) that isn't an auth flow gets an automatic toast,
   // unless the caller opts out with quiet (e.g. a price preview handled inline).
   const toastable = method !== 'GET' && !isAuthPath(path) && !quiet;
+
+  /*
+   * The encrypted channel, when the server offers one. `send` answers null
+   * when it does not — today's normal path, not an error — and this falls
+   * straight through to the plain fetch below.
+   */
+  let sealed = null;
+  try {
+    sealed = await secure.send(API_BASE, { method, path, body, token, signal });
+  } catch (e) {
+    if (e.name === 'AbortError') throw e;
+    sealed = null;                       // never fail a call over the channel
+  }
+  if (sealed) {
+    if (sealed.status === 401) {
+      clearToken();
+      onUnauthorized();
+      throw new Error('Session expired. Please sign in again.');
+    }
+    const d = sealed.data || {};
+    if (sealed.status >= 400 || d.success === false) {
+      const msg = d.error || `Request failed (${sealed.status})`;
+      if (toastable) onToast({ type: 'error', message: msg });
+      throw new Error(msg);
+    }
+    if (toastable) onToast({ type: 'success', message: d.message || 'Saved' });
+    return d;
+  }
 
   let res;
   try {
@@ -74,7 +123,41 @@ async function request(path, { method = 'GET', body, signal, quiet = false } = {
   return data;
 }
 
+/* Every call passes through here, so the header always knows the truth. */
+async function request(path, opts = {}) {
+  const loud = silent === 0;
+  if (loud && (inFlight += 1) === 1) busyWatchers.forEach((f) => f(true));
+  try {
+    const out = await rawRequest(path, opts);
+    lastOkAt = Date.now();
+    if (!healthy) { healthy = true; healthWatchers.forEach((f) => f({ healthy, lastOkAt })); }
+    return out;
+  } catch (e) {
+    if (/Cannot reach the server/.test(e.message) && healthy) {
+      healthy = false;
+      healthWatchers.forEach((f) => f({ healthy, lastOkAt }));
+    }
+    throw e;
+  } finally {
+    if (loud && (inFlight -= 1) === 0) busyWatchers.forEach((f) => f(false));
+  }
+}
+
 export const api = {
+  // live quiz & delivery — all read-only, all under a READ ONLY transaction
+  quizPulse:    () => request('/quiz-live/pulse'),
+  quizSeries:   (minutes = 120) => request('/quiz-live/series?minutes=' + minutes),
+  quizSlots:    () => request('/quiz-live/slots'),
+  quizInFlight: () => request('/quiz-live/in-flight'),
+  quizTimeline: (trackerId) => request('/quiz-live/timeline/' + trackerId),
+  questionAnalytics: (days = 30, limit = 40) => request('/question-analytics?days=' + days + '&limit=' + limit),
+
+  deliverySummary:       (days = 7)  => request('/delivery/summary?days=' + days),
+  deliveryDaily:         (days = 14) => request('/delivery/daily?days=' + days),
+  deliveryTemplates:     (days = 14) => request('/delivery/templates?days=' + days),
+  deliveryUndeliverable: ()          => request('/delivery/undeliverable'),
+  deliveryUnanswered:    ()          => request('/delivery/unanswered'),
+
   requestOtp: (mobile) => request('/otp', { method: 'POST', body: { mobile } }),
   login: (mobile, code) => request('/login', { method: 'POST', body: { mobile, code } }),
   loginPassword: (password) => request('/login-password', { method: 'POST', body: { password } }),

@@ -12,6 +12,7 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
 } from 'recharts';
 import { api } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { Page, Stat, Loading, ErrorBox, Pill, inr } from '../components/ui.jsx';
 import CohortHealth from '../components/CohortHealth.jsx';
 import Briefing from '../components/Briefing.jsx';
@@ -29,6 +30,7 @@ export default function Dashboard() {
       .catch((e) => setError(e.message));
   };
   useEffect(load, []);
+  useAutoRefresh(load, 20000);
 
   if (error) return <ErrorBox error={error} onRetry={load} />;
   if (!data) return <Loading label="Loading dashboard…" />;

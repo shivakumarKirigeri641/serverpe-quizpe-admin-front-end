@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { AnimatePresence } from 'framer-motion';
 import { Page, Loading, ErrorBox } from '../components/ui.jsx';
 import ReportPreview from '../components/ReportPreview.jsx';
@@ -53,11 +54,9 @@ export default function Tonight() {
     })
     .catch((e) => setError(e.message));
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 10000);
-    return () => clearInterval(t);
-  }, []);
+  useEffect(() => { load(); }, []);
+  // Pace, quiet refetch and the quiz-window floor come from the hook now.
+  useAutoRefresh(load, 10000);
 
   if (error) return <ErrorBox error={error} onRetry={load} />;
   if (!rows) return <Loading label="Loading tonight…" />;

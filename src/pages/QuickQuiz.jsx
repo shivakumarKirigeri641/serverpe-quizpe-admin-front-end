@@ -349,7 +349,8 @@ export default function QuickQuiz() {
   const [child, setChild] = useState(null);   // drill-down: student_id
 
   const load = () => api.quickQuiz(range).then(setD).catch((e) => setErr(e.message));
-  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, [range]);
+  useEffect(() => { load(); }, [range]);
+  useAutoRefresh(load, 15000);
 
   if (err) return <ErrorBox error={err} onRetry={load} />;
   if (!d) return <Loading label="Loading Quick Quiz…" />;

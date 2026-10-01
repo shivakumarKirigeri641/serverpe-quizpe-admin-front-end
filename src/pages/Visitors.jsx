@@ -11,6 +11,7 @@ import { Page, Loading, ErrorBox, Stat } from '../components/ui.jsx';
 import VisitorGroups from '../components/VisitorGroups.jsx';
 import IndiaHeat from '../components/IndiaHeat.jsx';
 import { api } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 
 const fmtDay = (d) => {
   const dt = new Date(d);
@@ -33,11 +34,9 @@ export default function Visitors() {
     api.visitorsGeo().then((d) => setGeo(d.geo)).catch(() => setGeo(null));
   };
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 30000);
-    return () => clearInterval(t);
-  }, []);
+  useEffect(() => { load(); }, []);
+  // Pace, quiet refetch and the quiz-window floor come from the hook now.
+  useAutoRefresh(load, 30000);
 
   if (error) return <ErrorBox error={error} onRetry={load} />;
   if (!a) return <Loading label="Loading visitor analytics…" />;
