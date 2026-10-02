@@ -7,6 +7,7 @@
  */
 import { useEffect, useState } from 'react';
 import { api, download, viewPdf } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { Page, Loading, ErrorBox } from '../components/ui.jsx';
 import InvoiceActions from '../components/InvoiceActions.jsx';
 
