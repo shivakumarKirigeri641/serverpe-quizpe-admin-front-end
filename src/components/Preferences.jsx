@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePrefs, savePrefs } from '../lib/motion.jsx';
+import { soundOn, setSound } from '../lib/sound';
+import { setChattyAlerts } from './LiveAlerts.jsx';
 import { CogIcon } from './Icons.jsx';
 
 /**
@@ -46,6 +48,10 @@ function Choice({ options, value, onPick }) {
 export default function Preferences() {
   const prefs = usePrefs();
   const [open, setOpen] = useState(false);
+  const [sound, setSoundOn] = useState(soundOn);
+  const [chatty, setChatty] = useState(() => {
+    try { return localStorage.getItem('quizpe.alerts.chatty.off') !== '1'; } catch { return true; }
+  });
   const box = useRef(null);
 
   useEffect(() => {
@@ -88,6 +94,29 @@ export default function Preferences() {
             />
             <span className="text-sm">Charts draw in</span>
           </label>
+
+          <div className="text-[10px] font-bold uppercase tracking-wider text-muted px-1 pt-3 pb-1.5">Pop-ups</div>
+
+          <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-line/50 cursor-pointer">
+            <input
+              type="checkbox" checked={sound}
+              onChange={(e) => { setSound(e.target.checked); setSoundOn(e.target.checked); }}
+              className="accent-brand-accent"
+            />
+            <span className="text-sm">Sound</span>
+          </label>
+
+          <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-line/50 cursor-pointer">
+            <input
+              type="checkbox" checked={chatty}
+              onChange={(e) => { setChattyAlerts(e.target.checked); setChatty(e.target.checked); }}
+              className="accent-brand-accent"
+            />
+            <span className="text-sm">Hellos &amp; finished quizzes</span>
+          </label>
+          <p className="text-[11px] text-muted px-2.5 leading-snug">
+            Payments, feedback and tickets always show.
+          </p>
 
           <p className="text-[11px] text-muted px-1 pt-2 leading-snug">
             Between 7:00 and 11:45 PM the panel never refreshes faster than every

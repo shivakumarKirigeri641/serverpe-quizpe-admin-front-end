@@ -46,7 +46,7 @@ import Curriculum from './pages/Curriculum.jsx';
 import AuditLog from './pages/AuditLog.jsx';
 import Toaster from './components/Toaster.jsx';
 import CommandPalette from './components/CommandPalette.jsx';
-import { PaymentCelebrator } from './components/Celebrate.jsx';
+import LiveAlerts from './components/LiveAlerts.jsx';
 
 export const Brand = createContext({ business: {}, logos: {} });
 export const useBrand = () => useContext(Brand);
@@ -90,7 +90,7 @@ export default function App() {
     <Brand.Provider value={brand}>
       <Toaster />
       <CommandPalette />
-      <PaymentCelebrator />
+      <LiveAlerts />
       <SessionProvider authed={authed}>
       <Shell brand={brand} onSignOut={signOut}>
           <AnimatePresence mode="wait">

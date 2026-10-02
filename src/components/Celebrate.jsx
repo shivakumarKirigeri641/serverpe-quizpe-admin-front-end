@@ -1,7 +1,7 @@
 /**
  * Celebrate — the delight pack.
  *
- *  <PaymentCelebrator/>  global: polls for new payments and, when one lands,
+ *  (payment pop-ups moved to components/LiveAlerts.jsx, which watches the
  *                        fires confetti + a soft chime + a toast.
  *  <Celebrations/>       a Dashboard card: children on a live streak and last
  *                        night's perfect scores — a ready source of testimonials.
@@ -52,50 +52,19 @@ export function confettiBurst() {
   requestAnimationFrame(tick);
 }
 
-/** A soft two-note chime (best-effort; browsers may block until a click). */
-export function chime() {
-  try {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    const ac = new AC();
-    [ [880, 0], [1318.5, 0.12] ].forEach(([f, t]) => {
-      const o = ac.createOscillator(), g = ac.createGain();
-      o.type = 'sine'; o.frequency.value = f;
-      o.connect(g); g.connect(ac.destination);
-      const s = ac.currentTime + t;
-      g.gain.setValueAtTime(0, s);
-      g.gain.linearRampToValueAtTime(0.18, s + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, s + 0.5);
-      o.start(s); o.stop(s + 0.55);
-    });
-    setTimeout(() => ac.close?.(), 1200);
-  } catch { /* audio blocked — confetti + toast still fire */ }
-}
+/**
+ * The chime lives in lib/sound.js now, which knows a different sound per kind.
+ * Re-exported here so older imports keep working.
+ */
+export { chime } from '../lib/sound';
 
-/** Global watcher: celebrate the moment a new payment is recorded. */
-export function PaymentCelebrator() {
-  const lastId = useRef(null);
-  useEffect(() => {
-    let alive = true;
-    const check = async () => {
-      try {
-        const { celebrations } = await api.celebrations();
-        const pay = celebrations?.latest_payment;
-        if (!pay || !alive) return;
-        if (lastId.current === null) { lastId.current = pay.id; return; }  // baseline, no cheer on first load
-        if (pay.id > lastId.current) {
-          lastId.current = pay.id;
-          confettiBurst(); chime();
-          toast(`🎉 ${inr(pay.amount)} — ${pay.parent_name || 'A parent'} just paid!`, 'success');
-        }
-      } catch { /* ignore */ }
-    };
-    check();
-    const t = setInterval(check, 20000);
-    return () => { alive = false; clearInterval(t); };
-  }, []);
-  return null;
-}
+/*
+ * PaymentCelebrator used to poll /celebrations and cheer a new payment. It has
+ * been retired: components/LiveAlerts.jsx now watches the whole activity feed
+ * from ONE poller and pops payments along with trials, hellos, feedback and
+ * tickets. Keeping both would have meant two pollers and two pop-ups for the
+ * same rupee.
+ */
 
 /** Dashboard card: live streaks + last night's perfect scores. */
 export function Celebrations() {
