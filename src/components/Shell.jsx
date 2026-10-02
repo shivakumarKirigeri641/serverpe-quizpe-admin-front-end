@@ -80,7 +80,8 @@ export const NAV = [
   {
     group: 'System',
     items: [
-      { to: '/support',  label: 'Support',  icon: LifebuoyIcon, cap: 'support.view' },
+      { to: '/system',   label: 'System health', icon: PulseIcon,    cap: 'dashboard.view' },
+      { to: '/support',  label: 'Support',       icon: LifebuoyIcon, cap: 'support.view' },
       { to: '/settings', label: 'Settings', icon: CogIcon,      cap: 'settings.view' },
     ],
   },

@@ -158,6 +158,13 @@ export const api = {
   deliveryUndeliverable: ()          => request('/delivery/undeliverable'),
   deliveryUnanswered:    ()          => request('/delivery/unanswered'),
 
+  // operations — jobs, what is stuck, and the error center
+  opsHealth:  ()          => request('/ops/health'),
+  opsJobs:    (days = 30) => request('/ops/jobs?days=' + days),
+  opsStuck:   ()          => request('/ops/stuck'),
+  opsErrors:  (days = 14) => request('/ops/errors?days=' + days),
+  opsWebhook: (days = 7)  => request('/ops/webhook?days=' + days),
+
   requestOtp: (mobile) => request('/otp', { method: 'POST', body: { mobile } }),
   login: (mobile, code) => request('/login', { method: 'POST', body: { mobile, code } }),
   loginPassword: (password) => request('/login-password', { method: 'POST', body: { password } }),
