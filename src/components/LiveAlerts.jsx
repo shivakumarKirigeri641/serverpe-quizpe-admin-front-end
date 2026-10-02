@@ -60,6 +60,10 @@ const SHOWN = {
     title: 'Support ticket', tone: 'warn', life: 12000, chatty: false,
     icon: '🛟', where: () => '/support',
   },
+  broadcast: {
+    title: 'Broadcast finished', tone: 'info', life: 12000, chatty: false,
+    icon: '📣', where: () => '/delivery',
+  },
   quiz_completed: {
     title: 'Quiz finished', tone: 'good', life: 6000, chatty: true,
     icon: '✅', where: (e) => (e.ref_id ? `/quizzes/${e.ref_id}` : '/tonight'),
@@ -97,7 +101,7 @@ export default function LiveAlerts() {
 
       const id = `${e.kind}-${e.ref_id}-${e.at}`;
       setToasts((list) => (list.some((t) => t.id === id) ? list : [...list.slice(-4), { ...e, id, spec }]));
-      chime(e.kind === 'quiz_completed' ? 'hi' : e.kind === 'said_hi' ? 'hi' : e.kind);
+      chime(e.kind === 'quiz_completed' || e.kind === 'said_hi' ? 'hi' : e.kind);
       if (e.kind === 'paid' && motionLevel() === 'full') confettiBurst();
       setTimeout(() => drop(id), spec.life);
     };
