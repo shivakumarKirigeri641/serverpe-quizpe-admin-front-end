@@ -165,6 +165,14 @@ export const api = {
   opsErrors:  (days = 14) => request('/ops/errors?days=' + days),
   opsWebhook: (days = 7)  => request('/ops/webhook?days=' + days),
 
+  // curriculum & audit
+  curriculumGrades:   (days = 30)  => request('/curriculum/grades?days=' + days),
+  curriculumSubjects: (days = 30)  => request('/curriculum/subjects?days=' + days),
+  curriculumPool:     (days = 180) => request('/curriculum/pool?days=' + days),
+  auditList:    (days = 30, action = null) =>
+    request('/audit?days=' + days + (action ? '&action=' + encodeURIComponent(action) : '')),
+  auditSummary: (days = 30) => request('/audit/summary?days=' + days),
+
   requestOtp: (mobile) => request('/otp', { method: 'POST', body: { mobile } }),
   login: (mobile, code) => request('/login', { method: 'POST', body: { mobile, code } }),
   loginPassword: (password) => request('/login-password', { method: 'POST', body: { password } }),

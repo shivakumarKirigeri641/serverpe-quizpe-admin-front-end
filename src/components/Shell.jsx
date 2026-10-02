@@ -50,6 +50,7 @@ export const NAV = [
       { to: '/free-access',     label: 'Free access',     icon: CalendarTickIcon, cap: 'quiz.manage' },
       { to: '/questions',       label: 'Question bank',   icon: QuestionIcon,     cap: 'questions.view' },
       { to: '/question-health', label: 'Question health', icon: HeartIcon,        cap: 'questions.view' },
+      { to: '/curriculum',      label: 'Grades & subjects', icon: ChartIcon,      cap: 'analytics.view' },
       { to: '/holidays',        label: 'Holidays',        icon: CalendarIcon,     cap: 'quiz.manage' },
     ],
   },
@@ -81,6 +82,7 @@ export const NAV = [
     group: 'System',
     items: [
       { to: '/system',   label: 'System health', icon: PulseIcon,    cap: 'dashboard.view' },
+      { to: '/audit',    label: 'Audit log',     icon: DocIcon,      cap: 'admins.manage' },
       { to: '/support',  label: 'Support',       icon: LifebuoyIcon, cap: 'support.view' },
       { to: '/settings', label: 'Settings', icon: CogIcon,      cap: 'settings.view' },
     ],

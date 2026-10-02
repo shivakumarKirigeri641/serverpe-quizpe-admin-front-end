@@ -42,6 +42,8 @@ import QuizLive from './pages/QuizLive.jsx';
 import QuestionHealth from './pages/QuestionHealth.jsx';
 import DeliveryHealth from './pages/DeliveryHealth.jsx';
 import SystemHealth from './pages/SystemHealth.jsx';
+import Curriculum from './pages/Curriculum.jsx';
+import AuditLog from './pages/AuditLog.jsx';
 import Toaster from './components/Toaster.jsx';
 import CommandPalette from './components/CommandPalette.jsx';
 import { PaymentCelebrator } from './components/Celebrate.jsx';
@@ -106,6 +108,8 @@ export default function App() {
                 <Route path="/question-health" element={<QuestionHealth />} />
                 <Route path="/delivery" element={<DeliveryHealth />} />
                 <Route path="/system" element={<SystemHealth />} />
+                <Route path="/curriculum" element={<Curriculum />} />
+                <Route path="/audit" element={<AuditLog />} />
                 <Route path="/quick-quiz" element={<QuickQuiz />} />
                 <Route path="/free-quiz" element={<FreeQuizSlot />} />
                 <Route path="/free-access" element={<FreeAccess />} />
