@@ -3,6 +3,9 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { ConnectionStatus, RefreshButton, BusyBar } from './HeaderStatus.jsx';
 import Preferences from './Preferences.jsx';
 import { useAllowed, useSession } from '../lib/session.jsx';
+import { api } from '../lib/api';
+import StatusStrip from './hq/StatusStrip.jsx';
+import MetaNews from './hq/MetaNews.jsx';
 import {
   ChartIcon, PulseIcon, RadioIcon, GaugeIcon, TrendIcon, BoltIcon, GiftIcon,
   CalendarIcon, CalendarTickIcon, QuestionIcon, HeartIcon, UsersIcon, GlobeIcon,
@@ -31,15 +34,45 @@ import {
 
 const FOLD_KEY = 'quizpe.nav.folded';
 
+/*
+ * THE ADMIN REVAMP (user, 2026-10-05: "make it like GaadiPe's panel"). The
+ * menu now reads like GaadiPe's — Dashboard, Graphs, Families, Quizzes,
+ * WhatsApp, Money, Operations — with counts beside the items that need you
+ * (`badge`, from /hq/badges). Every older screen keeps its place; the old
+ * Dashboard is "Overview", and Business health is the new home.
+ */
 export const NAV = [
   {
     group: 'Dashboard',
     items: [
-      { to: '/',           label: 'Dashboard',      icon: ChartIcon, end: true, cap: 'dashboard.view' },
+      { to: '/',           label: 'Business health', icon: GaugeIcon, end: true, cap: 'dashboard.view' },
+      { to: '/overview',   label: 'Overview',       icon: ChartIcon,            cap: 'dashboard.view' },
       { to: '/tonight',    label: 'Tonight (live)', icon: PulseIcon,            cap: 'dashboard.view' },
       { to: '/quiz-live',  label: 'Quiz pulse',     icon: GaugeIcon,            cap: 'dashboard.view' },
       { to: '/live',       label: 'Live activity',  icon: RadioIcon,            cap: 'dashboard.view' },
-      { to: '/analytics',  label: 'Analytics',      icon: TrendIcon,            cap: 'analytics.view' },
+    ],
+  },
+  {
+    group: 'Graphs',
+    items: [
+      { to: '/graphs/overview', label: 'Overview',       icon: TrendIcon,     cap: 'analytics.view' },
+      { to: '/graphs/funnel',   label: 'Signup funnel',  icon: TrendIcon,     cap: 'analytics.view' },
+      { to: '/graphs/money',    label: 'Money',          icon: RupeeIcon,     cap: 'analytics.view' },
+      { to: '/graphs/families', label: 'Families',       icon: UsersIcon,     cap: 'analytics.view' },
+      { to: '/graphs/quizzes',  label: 'Quizzes',        icon: QuestionIcon,  cap: 'analytics.view' },
+      { to: '/graphs/whatsapp', label: 'WhatsApp',       icon: ChatIcon,      cap: 'analytics.view' },
+      { to: '/graphs/services', label: 'Services',       icon: PulseIcon,     cap: 'analytics.view' },
+      { to: '/analytics',       label: 'Analytics (classic)', icon: ChartIcon, cap: 'analytics.view' },
+    ],
+  },
+  {
+    group: 'Families',
+    items: [
+      { to: '/parents',           label: 'Parents & students', icon: UsersIcon,  cap: 'parents.view' },
+      { to: '/hot-leads',         label: 'Hot leads 🔥',        icon: BoltIcon,   cap: 'parents.view', badge: 'trials_ending' },
+      { to: '/quizzes-per-child', label: 'Quizzes per child',  icon: CalendarTickIcon, cap: 'parents.view' },
+      { to: '/stopped',           label: 'Stopped messages',   icon: CloseIcon,  cap: 'parents.view' },
+      { to: '/visitors',          label: 'Visitors',           icon: GlobeIcon,  cap: 'analytics.view' },
     ],
   },
   {
@@ -55,17 +88,10 @@ export const NAV = [
     ],
   },
   {
-    group: 'Families',
-    items: [
-      { to: '/parents',  label: 'Parents & students', icon: UsersIcon, cap: 'parents.view' },
-      { to: '/visitors', label: 'Visitors',           icon: GlobeIcon, cap: 'analytics.view' },
-    ],
-  },
-  {
     group: 'WhatsApp',
     items: [
-      { to: '/whatsapp',  label: 'Conversations',    icon: ChatIcon,      cap: 'whatsapp.view' },
-      { to: '/broadcast', label: 'Broadcast',        icon: MegaphoneIcon, cap: 'whatsapp.send' },
+      { to: '/whatsapp',  label: 'Conversations',    icon: ChatIcon,      cap: 'whatsapp.view', badge: 'whatsapp_live' },
+      { to: '/broadcast', label: 'Broadcast',        icon: MegaphoneIcon, cap: 'whatsapp.send', badge: 'plans_running' },
       { to: '/delivery',  label: 'Delivery health',  icon: RadioIcon,     cap: 'whatsapp.view' },
       { to: '/templates', label: 'Templates',        icon: PuzzleIcon,    cap: 'whatsapp.view' },
       { to: '/inbox',     label: 'Inbox',            icon: InboxIcon,     cap: 'whatsapp.view' },
@@ -74,16 +100,18 @@ export const NAV = [
   {
     group: 'Money',
     items: [
+      { to: '/profit',  label: 'Profit & loss', icon: RupeeIcon, cap: 'finance.view' },
       { to: '/finance', label: 'Finance & GST', icon: RupeeIcon, cap: 'finance.view' },
       { to: '/reports', label: 'Reports',       icon: DocIcon,   cap: 'reports.view' },
     ],
   },
   {
-    group: 'System',
+    group: 'Operations',
     items: [
+      { to: '/alerts',   label: 'Alerts',        icon: RadioIcon,    cap: 'dashboard.view', badge: 'alerts' },
+      { to: '/support',  label: 'Support',       icon: LifebuoyIcon, cap: 'support.view',   badge: 'support_open' },
       { to: '/system',   label: 'System health', icon: PulseIcon,    cap: 'dashboard.view' },
       { to: '/audit',    label: 'Audit log',     icon: DocIcon,      cap: 'admins.manage' },
-      { to: '/support',  label: 'Support',       icon: LifebuoyIcon, cap: 'support.view' },
       { to: '/settings', label: 'Settings', icon: CogIcon,      cap: 'settings.view' },
     ],
   },
@@ -115,6 +143,15 @@ export default function Shell({ brand, onSignOut, children }) {
 
   const current = here(location.pathname);
   const activeGroup = current?.group || null;
+
+  // The menu's counts (admin revamp): refreshed every 30 seconds, quietly.
+  const [badges, setBadges] = useState(null);
+  useEffect(() => {
+    const load = () => api.hq.badges().then(setBadges).catch(() => {});
+    load();
+    const t = setInterval(load, 30000);
+    return () => clearInterval(t);
+  }, []);
 
   // A tap on a nav item should navigate AND dismiss the drawer, in one gesture.
   useEffect(() => { setOpen(false); }, [location.pathname]);
@@ -191,6 +228,7 @@ export default function Shell({ brand, onSignOut, children }) {
                           >
                             <span className="w-5 grid place-items-center shrink-0"><Icon /></span>
                             <span className="truncate">{n.label}</span>
+                            {n.badge && <NavBadge kind={n.badge} b={badges} />}
                           </NavLink>
                         );
                       })}
@@ -241,9 +279,24 @@ export default function Shell({ brand, onSignOut, children }) {
             </div>
           </header>
 
+          <StatusStrip />
           {children}
         </main>
       </div>
+      <MetaNews />
     </>
   );
+}
+
+/* A count beside a menu item — only when there is something to see. */
+function NavBadge({ kind, b }) {
+  if (!b) return null;
+  const [n, text, tone] = {
+    trials_ending: [b.trials_ending, String(b.trials_ending), 'bg-amber-400 text-ink'],
+    whatsapp_live: [b.whatsapp_live, `${b.whatsapp_live} live`, 'bg-emerald-400 text-ink'],
+    plans_running: [b.plans_running, `${b.plans_running} running`, 'bg-white/25 text-white'],
+    alerts: [b.alerts_open, String(b.alerts_open), b.alerts_critical ? 'bg-red-500 text-white' : 'bg-amber-400 text-ink'],
+    support_open: [b.support_open, String(b.support_open), 'bg-red-500 text-white'],
+  }[kind] || [0];
+  return n ? <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-bold ${tone}`}>{text}</span> : null;
 }

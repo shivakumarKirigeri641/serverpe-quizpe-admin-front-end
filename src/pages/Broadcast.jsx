@@ -11,6 +11,8 @@ import { api } from '../lib/api';
 import { toast } from '../components/Toaster.jsx';
 import { Page, Loading, ErrorBox } from '../components/ui.jsx';
 import { templateGuide } from '../lib/templateGuide';
+// Broadcast in batches under the WhatsApp limit shared with GaadiPe (2026-10-05).
+import { BatchSend, PlansSection, LimitNote } from '../components/hq/BatchPlans.jsx';
 
 export default function Broadcast() {
   const [opts, setOpts] = useState(null);
@@ -29,6 +31,8 @@ export default function Broadcast() {
   const [people, setPeople] = useState(null);
   const [checked, setChecked] = useState({});    // mobile -> true
   const [loadingPeople, setLoadingPeople] = useState(false);
+  const [batching, setBatching] = useState(false);
+  const [plansKey, setPlansKey] = useState(0);
 
   /** A template's variables array, tolerant of json/text storage. */
   const varsOf = (t) => !t ? []
@@ -214,6 +218,11 @@ export default function Broadcast() {
                         Select all reachable
                       </button>
                       <button type="button" className="btn-sec text-xs py-1"
+                              title="Only the reachable people who have never received a broadcast"
+                              onClick={() => { const a = {}; people.forEach((r) => { if (!r.paused && !r.last_broadcast) a[r.mobile] = true; }); setChecked(a); setPreview(null); }}>
+                        Never got a broadcast ({people.filter((r) => !r.paused && !r.last_broadcast).length})
+                      </button>
+                      <button type="button" className="btn-sec text-xs py-1"
                               onClick={() => { setChecked({}); setPreview(null); }}>
                         Clear
                       </button>
@@ -325,9 +334,22 @@ export default function Broadcast() {
                 </div>
               )}
 
+              <LimitNote count={preview.recipients} />
               <button className="btn-pri w-full mt-2" disabled={!canSend || busy} onClick={doSend}>
                 {busy === 'send' ? 'Sending…' : `📣 Send to ${preview.recipients} parent(s)`}
               </button>
+              {/* In batches: the exact numbers in the preview — every one is known
+                  for "pick" and "numbers"; for a segment, when the preview lists them all. */}
+              {(() => {
+                const list = (preview.list || []).map((r) => r.mobile).filter(Boolean);
+                const complete = list.length > 0 && list.length >= preview.recipients;
+                return (
+                  <button className="btn-sec w-full" disabled={!canSend || busy || !complete} onClick={() => setBatching(true)}
+                          title={complete ? 'Send in parts, 24 hours apart, never over the shared WhatsApp limit' : 'Use Pick people for lists longer than 500'}>
+                    📦 Send in batches…
+                  </button>
+                );
+              })()}
               {!template && <p className="text-[11px] text-red-600 mt-1">Pick a template above to enable Send.</p>}
               <p className="text-[11px] text-muted">Parents who replied STOP are always excluded. Sends are paced to stay under Meta's rate limit.</p>
             </div>
@@ -371,6 +393,14 @@ export default function Broadcast() {
           )}
         </div>
       </div>
+
+      {batching && preview && (
+        <BatchSend template={template} params={pvals}
+          mobiles={(preview.list || []).map((r) => r.mobile).filter(Boolean)}
+          onClose={() => setBatching(false)}
+          onCreated={() => { setBatching(false); setPreview(null); setPlansKey((k) => k + 1); }} />
+      )}
+      <PlansSection refreshKey={plansKey} />
 
       <div className="card p-4 mt-4 text-xs text-muted">
         <b className="text-ink">Tip:</b> keep marketing occasional and targeted — a win-back to lapsed parents, a referral nudge to happy payers, an exam-season push. Frequent blasts hurt your quality rating and get muted.

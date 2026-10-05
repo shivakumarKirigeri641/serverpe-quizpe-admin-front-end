@@ -18,6 +18,12 @@ import { SessionProvider } from './lib/session.jsx';
 
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+// The admin revamp (2026-10-05): GaadiPe-style home, graphs, families, money, alerts.
+import HqHome from './pages/hq/Home.jsx';
+import HqGraphs from './pages/hq/Graphs.jsx';
+import { HotLeads, Journey, QuizzesPerChild, Stopped } from './pages/hq/Families.jsx';
+import HqMoney from './pages/hq/Money.jsx';
+import HqAlerts from './pages/hq/Alerts.jsx';
 import Parents from './pages/Parents.jsx';
 import ParentDetail from './pages/ParentDetail.jsx';
 import QuizDetail from './pages/QuizDetail.jsx';
@@ -102,7 +108,16 @@ export default function App() {
               className="p-4 sm:p-6 max-w-[1600px] mx-auto"
             >
               <Routes>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<HqHome />} />
+                <Route path="/overview" element={<Dashboard />} />
+                <Route path="/graphs" element={<Navigate to="/graphs/overview" replace />} />
+                <Route path="/graphs/:page" element={<HqGraphs />} />
+                <Route path="/hot-leads" element={<HotLeads />} />
+                <Route path="/journey/:parentId" element={<Journey />} />
+                <Route path="/quizzes-per-child" element={<QuizzesPerChild />} />
+                <Route path="/stopped" element={<Stopped />} />
+                <Route path="/profit" element={<HqMoney />} />
+                <Route path="/alerts" element={<HqAlerts />} />
                 <Route path="/tonight" element={<Tonight />} />
                 <Route path="/quiz-live" element={<QuizLive />} />
                 <Route path="/question-health" element={<QuestionHealth />} />
