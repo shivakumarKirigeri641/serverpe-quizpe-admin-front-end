@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ResponsiveContainer, ComposedChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 import { api } from '../../lib/api';
@@ -28,7 +28,15 @@ export default function Graphs() {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
   const [drill, setDrill] = useState(null);
-  const load = useCallback(() => api.hq.graph(page, days).then((x) => { setD(x); setError(null); }).catch(setError), [page, days]);
+  // The tab being shown now: a late answer for a tab already left is ignored.
+  const want = useRef('');
+  want.current = `${page}:${days}`;
+  const load = useCallback(() => {
+    const key = `${page}:${days}`;
+    return api.hq.graph(page, days)
+      .then((x) => { if (want.current === key) { setD(x); setError(null); } })
+      .catch((e) => { if (want.current === key) setError(e); });
+  }, [page, days]);
   useEffect(() => { setD(null); load(); }, [load]);
   useAutoRefresh(load, 60000);
   const anim = chartsAnimate();
@@ -41,7 +49,9 @@ export default function Graphs() {
     <Page title="Graphs" subtitle="Live — refreshes every minute. Every chart has a Table view; tap a day to see who or what."
       actions={page !== 'funnel' && <Period value={days} onChange={setDays} />}>
       <Tabs tabs={PAGES} value={page} onChange={(p) => go(`/graphs/${p}`)} />
-      {error && !d ? <ErrorBox error={error} onRetry={load} /> : !d ? <Loading /> : (
+      {/* Only draw a page with ITS OWN data: on a tab switch the previous page's
+          data is still in state for one render, and its shape is different. */}
+      {error && !(d && d.page === page) ? <ErrorBox error={error} onRetry={load} /> : !(d && d.page === page) ? <Loading /> : (
         <div className="grid gap-4">
           {page === 'overview' && (
             <>
