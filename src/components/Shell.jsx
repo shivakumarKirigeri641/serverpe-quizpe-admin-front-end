@@ -5,12 +5,10 @@ import Preferences from './Preferences.jsx';
 import { useAllowed, useSession } from '../lib/session.jsx';
 import { api } from '../lib/api';
 import StatusStrip from './hq/StatusStrip.jsx';
-import MetaNews from './hq/MetaNews.jsx';
-import { WHATSAPP_ADMIN } from '../lib/flags';
 import {
   ChartIcon, PulseIcon, RadioIcon, GaugeIcon, TrendIcon, BoltIcon, GiftIcon,
   CalendarIcon, CalendarTickIcon, QuestionIcon, HeartIcon, UsersIcon, GlobeIcon,
-  ChatIcon, MegaphoneIcon, PuzzleIcon, InboxIcon, RupeeIcon, DocIcon,
+  InboxIcon, RupeeIcon, DocIcon,
   LifebuoyIcon, CogIcon, MenuIcon, CloseIcon, ChevronIcon,
 } from './Icons.jsx';
 
@@ -37,16 +35,12 @@ const FOLD_KEY = 'quizpe.nav.folded';
 
 /*
  * THE ADMIN REVAMP (user, 2026-10-05: "make it like GaadiPe's panel"). The
- * menu now reads like GaadiPe's — Dashboard, Graphs, Families, Quizzes,
- * WhatsApp, Money, Operations — with counts beside the items that need you
- * (`badge`, from /hq/badges). Every older screen keeps its place; the old
- * Dashboard is "Overview", and Business health is the new home.
+ * menu now reads like GaadiPe's — Dashboard, Website, Graphs, Families, Quizzes,
+ * Money, Operations — with counts beside the items that need you (`badge`, from
+ * /hq/badges). The old Dashboard is "Overview", and Business health is the home.
+ * WhatsApp is gone (user, 2026-10-10: "drop all WhatsApp contents"): no WhatsApp group.
  */
-/* WhatsApp is gone (2026-10-10): its group and items are left out unless VITE_WHATSAPP_ADMIN=1. */
-const keepWa = (x) => WHATSAPP_ADMIN || !x.wa;
-const withoutWa = (groups) => groups.filter(keepWa).map((g) => ({ ...g, items: g.items.filter(keepWa) }));
-
-export const NAV = withoutWa([
+export const NAV = ([
   {
     group: 'Dashboard',
     items: [
@@ -65,17 +59,21 @@ export const NAV = withoutWa([
       { to: '/web/sign-ins', label: 'Sign-ins',             icon: UsersIcon, cap: 'parents.view' },
       { to: '/web/families', label: 'Families on the app',  icon: UsersIcon, cap: 'parents.view' },
       { to: '/visitors',     label: 'Visitors',             icon: GlobeIcon, cap: 'analytics.view' },
+      // The website's inbox (enquiries, testimonials, ratings) — it sat under WhatsApp before.
+      { to: '/inbox',        label: 'Inbox',                icon: InboxIcon, cap: 'parents.view' },
     ],
   },
   {
     group: 'Graphs',
     items: [
+      // The website and the app (2026-10-10) — no WhatsApp graphs.
       { to: '/graphs/overview', label: 'Overview',       icon: TrendIcon,     cap: 'analytics.view' },
-      { to: '/graphs/funnel',   label: 'Signup funnel',  icon: TrendIcon,     cap: 'analytics.view' },
-      { to: '/graphs/money',    label: 'Money',          icon: RupeeIcon,     cap: 'analytics.view' },
+      { to: '/graphs/website',  label: 'Website',        icon: GlobeIcon,     cap: 'analytics.view' },
+      { to: '/graphs/funnel',   label: 'App funnel',     icon: TrendIcon,     cap: 'analytics.view' },
       { to: '/graphs/families', label: 'Families',       icon: UsersIcon,     cap: 'analytics.view' },
       { to: '/graphs/quizzes',  label: 'Quizzes',        icon: QuestionIcon,  cap: 'analytics.view' },
-      { to: '/graphs/whatsapp', label: 'WhatsApp',       icon: ChatIcon,      cap: 'analytics.view', wa: true },
+      { to: '/graphs/money',    label: 'Money',          icon: RupeeIcon,     cap: 'analytics.view' },
+      { to: '/graphs/reach',    label: 'Reach',          icon: RadioIcon,     cap: 'analytics.view' },
       { to: '/graphs/services', label: 'Services',       icon: PulseIcon,     cap: 'analytics.view' },
       { to: '/analytics',       label: 'Analytics (classic)', icon: ChartIcon, cap: 'analytics.view' },
     ],
@@ -86,7 +84,6 @@ export const NAV = withoutWa([
       { to: '/parents',           label: 'Parents & students', icon: UsersIcon,  cap: 'parents.view' },
       { to: '/hot-leads',         label: 'Hot leads 🔥',        icon: BoltIcon,   cap: 'parents.view', badge: 'trials_ending' },
       { to: '/quizzes-per-child', label: 'Quizzes per child',  icon: CalendarTickIcon, cap: 'parents.view' },
-      { to: '/stopped',           label: 'Stopped messages',   icon: CloseIcon,  cap: 'parents.view', wa: true },
     ],
   },
   {
@@ -99,17 +96,6 @@ export const NAV = withoutWa([
       { to: '/question-health', label: 'Question health', icon: HeartIcon,        cap: 'questions.view' },
       { to: '/curriculum',      label: 'Grades & subjects', icon: ChartIcon,      cap: 'analytics.view' },
       { to: '/holidays',        label: 'Holidays',        icon: CalendarIcon,     cap: 'quiz.manage' },
-    ],
-  },
-  {
-    group: 'WhatsApp',
-    wa: true,     // hidden unless VITE_WHATSAPP_ADMIN=1 (lib/flags.js)
-    items: [
-      { to: '/whatsapp',  label: 'Conversations',    icon: ChatIcon,      cap: 'whatsapp.view', badge: 'whatsapp_live' },
-      { to: '/broadcast', label: 'Broadcast',        icon: MegaphoneIcon, cap: 'whatsapp.send', badge: 'plans_running' },
-      { to: '/delivery',  label: 'Delivery health',  icon: RadioIcon,     cap: 'whatsapp.view' },
-      { to: '/templates', label: 'Templates',        icon: PuzzleIcon,    cap: 'whatsapp.view' },
-      { to: '/inbox',     label: 'Inbox',            icon: InboxIcon,     cap: 'whatsapp.view' },
     ],
   },
   {
@@ -298,8 +284,6 @@ export default function Shell({ brand, onSignOut, children }) {
           {children}
         </main>
       </div>
-      {/* Meta account news — only while WhatsApp is part of the admin. */}
-      {WHATSAPP_ADMIN ? <MetaNews /> : null}
     </>
   );
 }

@@ -36,7 +36,8 @@ export default function Money() {
             <Row label="GST you pay the government" v={d.gst} minus />
             <Row label="Your revenue" v={d.revenue} strong />
             <Row label="Razorpay fee" v={d.gateway} minus note={d.gateway_estimated ? `${d.gateway_estimated} estimated at ${d.fee_percent}%` : ''} />
-            <Row label="WhatsApp templates" v={d.whatsapp} minus note={`${num(d.templates.marketing)} marketing × ₹${d.templates.marketing_rate} + ${num(d.templates.utility)} utility × ₹${d.templates.utility_rate}`} />
+            {/* WhatsApp is gone (2026-10-10): only while the period still holds its old cost, so the sum adds up. */}
+            {d.whatsapp > 0 ? <Row label="Old WhatsApp messages (before the switch to the web)" v={d.whatsapp} minus note={`${num(d.templates.marketing + d.templates.utility)} messages`} /> : null}
             <Row label="Left from sales" v={d.from_sales} strong />
             <Row label="Meta ads — QuizPe" v={d.ads} minus note={d.ads_source === 'expenses' ? 'from Expenses' : `assumed ₹${d.ads_daily}/day`} />
             <Row label="Other expenses" v={d.other_expenses} minus note="Finance → Expenses" />
@@ -50,7 +51,7 @@ export default function Money() {
             <div className="grid grid-cols-2 gap-3">
               <div className="card p-4"><div className="text-[11px] font-bold uppercase text-muted">Take-home per sale</div>
                 <div className="text-2xl font-extrabold text-ink">{d.take_home_per_sale == null ? '—' : inr(d.take_home_per_sale, 2)}</div>
-                <div className="text-[11px] text-muted">after GST, Razorpay, WhatsApp</div></div>
+                <div className="text-[11px] text-muted">after GST and Razorpay</div></div>
               <div className="card p-4"><div className="text-[11px] font-bold uppercase text-muted">Sales to break even</div>
                 <div className="text-2xl font-extrabold text-ink">{d.sales_to_break_even == null ? '—' : num(d.sales_to_break_even)}</div>
                 <div className="text-[11px] text-muted">in {d.days} days · you had {num(d.invoices)}</div></div>

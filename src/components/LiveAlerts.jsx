@@ -48,21 +48,14 @@ const SHOWN = {
     title: 'Free trial started', tone: 'good', life: 9000, chatty: false,
     icon: '🌱', where: (e) => (e.parent_id ? `/parents/${e.parent_id}` : '/parents'),
   },
-  said_hi: {
-    title: 'Someone said hi', tone: 'info', life: 7000, chatty: true,
-    icon: '👋', where: () => '/whatsapp',
-  },
+  // No WhatsApp alerts (2026-10-10): "said hi" and "broadcast finished" are gone with it.
   feedback: {
     title: 'New feedback', tone: 'info', life: 11000, chatty: false,
-    icon: '⭐', where: () => '/inbox',
+    icon: '⭐', where: () => '/support',
   },
   support: {
     title: 'Support ticket', tone: 'warn', life: 12000, chatty: false,
     icon: '🛟', where: () => '/support',
-  },
-  broadcast: {
-    title: 'Broadcast finished', tone: 'info', life: 12000, chatty: false,
-    icon: '📣', where: () => '/delivery',
   },
   quiz_completed: {
     title: 'Quiz finished', tone: 'good', life: 6000, chatty: true,

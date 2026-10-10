@@ -264,7 +264,7 @@ function Visitors({ data, reload, setError }) {
               <div className="flex items-center gap-3 text-sm">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${v.kind === 'wa_click' ? 'bg-emerald-500' : 'bg-sky-400'}`} />
                 <span className="font-semibold shrink-0">
-                  {v.kind === 'wa_click' ? '💬 Tapped WhatsApp' : 'Viewed page'}
+                  {v.kind === 'wa_click' ? 'Tapped a button' : 'Viewed page'}
                 </span>
                 <span className="text-muted truncate">{v.path || '/'}</span>
                 <span className="text-xs text-muted ml-auto whitespace-nowrap">{v.at_ist}</span>

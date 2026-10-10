@@ -4,7 +4,8 @@
  * All numbers are windowed from the launch date (server-enforced), so the
  * charts show real growth and not pre-launch test traffic. Refreshes on a
  * timer like the other live views. GA4 (via GTM) still holds the deep
- * geography/funnel reports; this is the at-a-glance panel + WhatsApp-intent.
+ * geography/funnel reports; this is the at-a-glance panel. (No WhatsApp taps since
+ * 2026-10-10 — the site has no WhatsApp button; sign-ins are on Graphs → Website.)
  */
 import { useEffect, useState } from 'react';
 import { Page, Loading, ErrorBox, Stat } from '../components/ui.jsx';
@@ -59,14 +60,15 @@ export default function Visitors() {
               delta={td.vs_yesterday_pct} sub="vs yesterday" />
         <Stat index={1} label="Visitors today" value={td.uniques}
               delta={td.uniques_vs_yesterday_pct} sub="vs yesterday" />
-        <Stat index={2} label="WhatsApp clicks today" value={td.wa_clicks} tone="ink"
-              delta={td.wa_vs_yesterday_pct} sub="vs yesterday" />
+        {/* No WhatsApp (2026-10-10): how deep visitors go, instead of WhatsApp taps. */}
+        <Stat index={2} label="Pages per visitor" value={td.uniques ? Math.round((td.views / td.uniques) * 10) / 10 : 0} tone="ink"
+              sub="today" />
         <Stat index={3} label="Views this week" value={wk.views}
               delta={wk.change_pct} sub="vs previous week" />
         <Stat index={4} label="Total views" value={t.views}
               sub={`${t.uniques} unique · since launch`} />
-        <Stat index={5} label="WhatsApp clicks" value={t.wa_clicks} tone="ink"
-              sub={`${t.conversion_pct}% of views`} />
+        <Stat index={5} label="Visitors since launch" value={t.uniques} tone="ink"
+              sub="different browsers" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 mt-4">
@@ -108,8 +110,8 @@ export default function Visitors() {
               <p className="text-[11px] font-bold uppercase text-muted">from India</p>
             </div>
             <div>
-              <p className="text-2xl font-black text-brand">{t.conversion_pct}%</p>
-              <p className="text-[11px] font-bold uppercase text-muted">tap WhatsApp</p>
+              <p className="text-2xl font-black text-brand">{t.uniques ? Math.round((t.views / t.uniques) * 10) / 10 : 0}</p>
+              <p className="text-[11px] font-bold uppercase text-muted">pages per visitor</p>
             </div>
           </div>
         </div>
@@ -127,7 +129,7 @@ export default function Visitors() {
       <div className="flex items-center justify-between mt-6 mb-3">
         <h2 className="font-bold text-brand">Recent visitors</h2>
         <span className="pill bg-emerald-50 text-emerald-700">
-          {td.views + td.wa_clicks} today · {td.uniques} unique
+          {td.views} today · {td.uniques} unique
         </span>
       </div>
       <VisitorTable rows={recent} />
@@ -160,9 +162,7 @@ function VisitorTable({ rows }) {
                 <tr key={v.id} className="hover:bg-line/30 transition">
                   <td className="td text-xs whitespace-nowrap text-muted">{v.at_ist}</td>
                   <td className="td">
-                    <span className={`pill ${v.kind === 'wa_click' ? 'bg-emerald-50 text-emerald-700' : 'bg-sky-50 text-sky-700'}`}>
-                      {v.kind === 'wa_click' ? '💬 WhatsApp' : 'View'}
-                    </span>
+                    <span className="pill bg-sky-50 text-sky-700">{v.kind === 'wa_click' ? 'Tap' : 'View'}</span>
                   </td>
                   <td className="td text-xs">{v.device || '—'}</td>
                   <td className="td text-xs">{v.city || '—'}</td>
@@ -194,12 +194,11 @@ function VisitorTable({ rows }) {
 }
 
 function prettyRef(s) {
-  if (!s || s === 'direct') return 'Direct / WhatsApp share';
+  if (!s || s === 'direct') return 'Direct / shared link';
   try { return new URL(s).hostname.replace(/^www\./, ''); } catch { return s; }
 }
 
-/** A compact bar chart: views as bars, WhatsApp taps stacked on top with a
- *  visible count under each day, plus a total. */
+/** A compact bar chart: views per day, with each day's count. */
 function DailyChart({ daily }) {
   if (!daily?.length) return <p className="text-sm text-muted py-8 text-center">No visits recorded yet.</p>;
   const max = Math.max(1, ...daily.map((d) => d.views));
@@ -207,14 +206,12 @@ function DailyChart({ daily }) {
   // overlap into an unreadable smear. The floor is now wide enough for a
   // 45°-rotated label, and the row scrolls sideways rather than compressing.
   const H = 160, barW = Math.min(46, Math.max(26, Math.floor(760 / daily.length) - 8));
-  const waTotal = daily.reduce((s, d) => s + (d.wa || 0), 0);
+  const total = daily.reduce((s, d) => s + (d.views || 0), 0);
   return (
     <div>
-      {/* legend + total taps */}
       <div className="flex items-center gap-4 mb-3 text-[11px] text-muted">
         <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-brand-accent/85" /> Views</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500" /> WhatsApp taps</span>
-        <span className="ml-auto font-semibold text-emerald-600">💬 {waTotal} taps in this period</span>
+        <span className="ml-auto font-semibold text-brand">{total} views in this period</span>
       </div>
       <div className="overflow-x-auto">
         {/* pt-6 gives the value labels that sit above each bar room, so they
@@ -222,7 +219,6 @@ function DailyChart({ daily }) {
         <div className="flex items-end gap-2 pt-6" style={{ minHeight: H + 50 }}>
           {daily.map((d) => {
             const h = Math.round((d.views / max) * H);
-            const waH = d.views ? Math.round((d.wa / max) * H) : 0;
             return (
               <div key={d.day} className="flex flex-col items-center shrink-0" style={{ width: barW }}>
                 <div className="relative w-full flex flex-col justify-end" style={{ height: H }}>
@@ -232,7 +228,6 @@ function DailyChart({ daily }) {
                     </span>
                   )}
                   <div className="w-full rounded-t bg-brand-accent/85" style={{ height: h || 2 }} />
-                  {waH > 0 && <div className="w-full bg-emerald-500" style={{ height: waH }} title={`${d.wa} WhatsApp taps`} />}
                 </div>
                 {/* Rotated so a full date fits under a narrow bar. The fixed
                     height reserves room for the diagonal, so the tap count
@@ -242,10 +237,6 @@ function DailyChart({ daily }) {
                     className="text-[10px] text-muted whitespace-nowrap origin-top-right -rotate-45 mt-1"
                     style={{ transformOrigin: '100% 0' }}
                   >{fmtDay(d.day)}</span>
-                </span>
-                {/* visible WhatsApp tap count for the day */}
-                <span className={`text-[10px] font-bold whitespace-nowrap ${d.wa > 0 ? 'text-emerald-600' : 'text-transparent'}`}>
-                  💬 {d.wa || 0}
                 </span>
               </div>
             );

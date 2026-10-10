@@ -3,7 +3,7 @@
  *
  * A plain-English recap of the night + today's money, then an action list of
  * the few things worth doing now: trials ending without payment and children
- * who missed last night, each with a one-tap prewritten WhatsApp nudge.
+ * who missed last night, each linking to the family. (No WhatsApp since 2026-10-10.)
  */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -31,7 +31,6 @@ export default function Briefing() {
       (s.missed_last_night ? `, ${s.missed_last_night} missed` : ''),
     `Today ${inr(s.revenue_today)} from ${s.payments_today} payment${s.payments_today === 1 ? '' : 's'}` +
       (s.trials_today ? ` · ${s.trials_today} new trial${s.trials_today === 1 ? '' : 's'}` : ''),
-    `WhatsApp taps ${s.wa_today} (${s.wa_delta >= 0 ? '+' : ''}${s.wa_delta}% vs yesterday)`,
   ].join('  ·  ');
 
   const hasTodos = b.trials_ending.length || b.missed.length || s.open_enquiries || s.testimonials_pending;

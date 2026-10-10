@@ -13,7 +13,7 @@ import { api } from '../lib/api';
 const PAGES = [
   ['📊 Dashboard', '/'], ['🟢 Tonight (live)', '/tonight'], ['📡 Live activity', '/live'],
   ['📈 Analytics', '/analytics'], ['🌐 Visitors', '/visitors'], ['👨‍👩‍👧 Parents & students', '/parents'],
-  ['💬 Conversations', '/whatsapp'], ['❓ Question bank', '/questions'], ['📄 Reports', '/reports'],
+  ['🌐 Website', '/web'], ['📈 Graphs · Website', '/graphs/website'], ['❓ Question bank', '/questions'], ['📄 Reports', '/reports'],
   ['₹ Finance & GST', '/finance'], ['📥 Inbox', '/inbox'], ['💬 Support', '/support'],
   ['⚙️ Settings', '/settings'],
 ];

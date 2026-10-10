@@ -106,7 +106,7 @@ export function WebOverview() {
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
-          <p className="mt-3 text-[11px] text-muted">WhatsApp is no longer used for QuizPe. Quizzes, trials, plans and reports run on quizpe.in/app; reminders go by email and phone notifications.</p>
+          <p className="mt-3 text-[11px] text-muted">Quizzes, trials, plans and reports run on quizpe.in/app; reminders go by email and phone notifications.</p>
         </>
       )}
     </Page>

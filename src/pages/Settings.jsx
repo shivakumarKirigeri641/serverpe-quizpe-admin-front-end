@@ -126,7 +126,7 @@ export default function Settings() {
         </>
       )}
       {system && (
-        <div className="grid sm:grid-cols-4 gap-4 mb-5">
+        <div className="grid sm:grid-cols-2 gap-4 mb-5">
           <div className="card p-4">
             <div className="text-[11px] uppercase font-bold text-muted">Database</div>
             <div className="text-xl font-bold text-brand mt-1">{system.database}</div>
@@ -138,47 +138,9 @@ export default function Settings() {
             </div>
             {system.jobs.failed > 0 && <Pill tone="red">{system.jobs.failed} failed</Pill>}
           </div>
-          <div className="card p-4">
-            <div className="text-[11px] uppercase font-bold text-muted">Sent today</div>
-            <div className="text-xl font-bold text-brand mt-1">{system.today.sent}</div>
-            {system.today.failed > 0 && <Pill tone="red">{system.today.failed} failed</Pill>}
-          </div>
-          <div className="card p-4">
-            <div className="text-[11px] uppercase font-bold text-muted">Templates</div>
-            <div className="text-xl font-bold text-brand mt-1">
-              {system.templates.filter((t) => t.approval_status === 'APPROVED').length}
-              <span className="text-sm text-muted font-semibold"> / {system.templates.length} approved</span>
-            </div>
-          </div>
         </div>
       )}
 
-      {/* WhatsApp templates — a readable table instead of a cramped card list */}
-      {system?.templates?.length > 0 && (
-        <div className="mb-5">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">WhatsApp templates</p>
-          <div className="card overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead><tr>{['Template', 'Status', 'Used for'].map((h) => <th key={h} className="th">{h}</th>)}</tr></thead>
-                <tbody>
-                  {system.templates.map((t) => (
-                    <tr key={t.template_name} className="hover:bg-line/30 transition">
-                      <td className="td font-mono text-xs">{t.template_name}</td>
-                      <td className="td">
-                        <Pill tone={t.approval_status === 'APPROVED' ? 'green' : t.approval_status === 'PENDING' ? 'amber' : 'grey'}>
-                          {t.approval_status}
-                        </Pill>
-                      </td>
-                      <td className="td text-xs text-muted">{t.send_context || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="flex gap-1 mb-4 flex-wrap">
         {TABLES.map((t) => (

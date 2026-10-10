@@ -21,14 +21,14 @@ import Dashboard from './pages/Dashboard.jsx';
 // The admin revamp (2026-10-05): GaadiPe-style home, graphs, families, money, alerts.
 import HqHome from './pages/hq/Home.jsx';
 import HqGraphs from './pages/hq/Graphs.jsx';
-import { HotLeads, Journey, QuizzesPerChild, Stopped } from './pages/hq/Families.jsx';
+import { HotLeads, Journey, QuizzesPerChild } from './pages/hq/Families.jsx';
 import HqMoney from './pages/hq/Money.jsx';
 import HqAlerts from './pages/hq/Alerts.jsx';
 import { WebOverview, WebSignIns, WebFamilies } from './pages/hq/Web.jsx';
-import { WHATSAPP_ADMIN } from './lib/flags';
 
-/* A WhatsApp page while WhatsApp is out of the admin (2026-10-10): to the website overview instead. */
-const WA = (page) => (WHATSAPP_ADMIN ? page : <Navigate to="/web" replace />);
+/* WhatsApp is gone from the admin (user, 2026-10-10: "drop all WhatsApp contents"): an old
+   link to one of its pages opens the website overview. */
+const TO_WEB = <Navigate to="/web" replace />;
 import Parents from './pages/Parents.jsx';
 import ParentDetail from './pages/ParentDetail.jsx';
 import QuizDetail from './pages/QuizDetail.jsx';
@@ -43,15 +43,11 @@ import Tonight from './pages/Tonight.jsx';
 import QuickQuiz from './pages/QuickQuiz.jsx';
 import FreeQuizSlot from './pages/FreeQuizSlot.jsx';
 import FreeAccess from './pages/FreeAccess.jsx';
-import WhatsAppPage from './pages/WhatsApp.jsx';
-import Inbox from './pages/Inbox.jsx';
 import Visitors from './pages/Visitors.jsx';
-import Broadcast from './pages/Broadcast.jsx';
-import Templates from './pages/Templates.jsx';
+import Inbox from './pages/Inbox.jsx';
 import Holidays from './pages/Holidays.jsx';
 import QuizLive from './pages/QuizLive.jsx';
 import QuestionHealth from './pages/QuestionHealth.jsx';
-import DeliveryHealth from './pages/DeliveryHealth.jsx';
 import SystemHealth from './pages/SystemHealth.jsx';
 import Curriculum from './pages/Curriculum.jsx';
 import AuditLog from './pages/AuditLog.jsx';
@@ -124,13 +120,13 @@ export default function App() {
                 <Route path="/web" element={<WebOverview />} />
                 <Route path="/web/sign-ins" element={<WebSignIns />} />
                 <Route path="/web/families" element={<WebFamilies />} />
-                <Route path="/stopped" element={WA(<Stopped />)} />
+                <Route path="/stopped" element={TO_WEB} />
                 <Route path="/profit" element={<HqMoney />} />
                 <Route path="/alerts" element={<HqAlerts />} />
                 <Route path="/tonight" element={<Tonight />} />
                 <Route path="/quiz-live" element={<QuizLive />} />
                 <Route path="/question-health" element={<QuestionHealth />} />
-                <Route path="/delivery" element={WA(<DeliveryHealth />)} />
+                <Route path="/delivery" element={TO_WEB} />
                 <Route path="/system" element={<SystemHealth />} />
                 <Route path="/curriculum" element={<Curriculum />} />
                 <Route path="/audit" element={<AuditLog />} />
@@ -143,14 +139,15 @@ export default function App() {
                 <Route path="/parents" element={<Parents />} />
                 <Route path="/parents/:id" element={<ParentDetail />} />
                 <Route path="/quizzes/:trackerId" element={<QuizDetail />} />
-                <Route path="/whatsapp" element={WA(<WhatsAppPage />)} />
-                <Route path="/broadcast" element={WA(<Broadcast />)} />
+                <Route path="/whatsapp" element={TO_WEB} />
+                <Route path="/broadcast" element={TO_WEB} />
                 <Route path="/holidays" element={<Holidays />} />
-                <Route path="/templates" element={WA(<Templates />)} />
+                <Route path="/templates" element={TO_WEB} />
                 <Route path="/questions" element={<Questions />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/finance" element={<Finance />} />
-                <Route path="/inbox" element={WA(<Inbox />)} />
+                {/* The website's inbox: enquiries, testimonials, ratings to publish. */}
+                <Route path="/inbox" element={<Inbox />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

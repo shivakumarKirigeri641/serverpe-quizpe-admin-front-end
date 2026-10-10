@@ -8,8 +8,9 @@ import { Tabs, Period, num, ago, dt, dayLabel } from '../../components/hq/kit.js
 /*
  * FAMILIES (admin revamp, 2026-10-05) — QuizPe's version of GaadiPe's
  * Customers pages: who to talk to today (hot leads), one family's whole story
- * (journey), how each child is doing day by day, and who asked us to stop.
- * Everything is read-only; replies happen on the WhatsApp page as before.
+ * (journey), and how each child is doing day by day. Read-only.
+ * WhatsApp is gone (2026-10-10): leads show their last app visit and how they can be
+ * reached (email, phone notifications); the journey shows app sign-ins, not chats.
  */
 
 /* ────────────────────────────── Hot leads ────────────────────────────── */
@@ -18,7 +19,7 @@ const LEAD_TABS = [
   ['ending', '⏳ Trial ending', 'Free trial ends within 2 days, never paid — the best moment to offer a plan.'],
   ['ended', '⌛ Trial ended', 'Trial ended in the last 14 days, never paid.'],
   ['was_paying', '↩ Was paying', 'A paid plan ended in the last 30 days and was not renewed.'],
-  ['chatted', '💬 Chatted only', 'Wrote to QuizPe in the last 7 days but never enrolled a child.'],
+  ['no_child', '🧒 Signed in, no child yet', 'Signed in on the app in the last 14 days but never added a child — the trial form was not finished.'],
 ];
 
 export function HotLeads() {
@@ -35,9 +36,10 @@ export function HotLeads() {
     if (first) setTab(first[0]);
     setPicked(true);
   }, [d, picked]);
-  const rows = (d?.tabs?.[tab] || []).slice().sort((a, b) => new Date(b.last_inbound_at || 0) - new Date(a.last_inbound_at || 0));
+  const rows = (d?.tabs?.[tab] || []).slice().sort((a, b) => new Date(b.last_app_visit || 0) - new Date(a.last_app_visit || 0));
   return (
-    <Page title="Hot leads 🔥" subtitle="Families worth a word today. A green “chat open” means a reply is free and needs no template.">
+    <Page title="Hot leads 🔥" subtitle="Families worth a word today — with their last visit to the app and how they can be reached.">
+
       {error && !d ? <ErrorBox error={error} onRetry={load} /> : !d ? <Loading /> : (
         <>
           <Tabs tabs={LEAD_TABS.map(([k, l]) => [k, l, d.counts[k]])} value={tab} onChange={setTab} />
@@ -49,16 +51,15 @@ export function HotLeads() {
                   <div className="flex flex-wrap items-baseline gap-2">
                     <b className="text-ink">{r.name || 'Unknown'}</b>
                     <span className="text-[11px] tabular-nums text-muted">{r.masked}</span>
-                    {r.window_open ? <Pill tone="green">chat open</Pill> : <Pill tone="grey">chat closed</Pill>}
+                    {r.reach?.length ? <Pill tone="green">{r.reach.join(' + ')}</Pill> : <Pill tone="grey">no email, no notifications</Pill>}
                     {r.parent_id && <Link className="ml-auto text-xs font-semibold text-brand-accent hover:underline" to={`/journey/${r.parent_id}`}>Journey →</Link>}
                   </div>
                   {r.children && <div className="mt-1 text-xs text-ink">Children: {r.children} · {num(r.quizzes_done)} quiz(zes) finished</div>}
                   <div className="mt-1 text-[11px] text-muted">
-                    {tab === 'chatted' ? `Last wrote ${ago(r.at)}` : `${tab === 'was_paying' ? 'Plan ended' : 'Trial ends'} ${String(r.at).slice(0, 10)}`}
-                    {r.last_inbound_at && tab !== 'chatted' ? ` · last wrote ${ago(r.last_inbound_at)}` : ''}
+                    {tab === 'no_child' ? `First signed in ${ago(r.at)}` : `${tab === 'was_paying' ? 'Plan ended' : tab === 'ended' ? 'Trial ended' : 'Trial ends'} ${String(r.at).slice(0, 10)}`}
+                    {` · ${r.last_app_visit ? `last on the app ${ago(r.last_app_visit)}` : 'never opened the app'}`}
                   </div>
-                  {r.last_message && <p className="mt-2 rounded-lg bg-line/40 px-3 py-2 text-xs text-ink">“{r.last_message}”</p>}
-                  <div className="mt-3"><Link className="btn-sec !py-1.5 text-xs" to="/whatsapp">Open WhatsApp →</Link></div>
+                  {r.parent_id && <div className="mt-3"><Link className="btn-sec !py-1.5 text-xs" to={`/parents/${r.parent_id}`}>Parent details →</Link></div>}
                 </div>
               ))}
             </div>
@@ -73,7 +74,7 @@ export function HotLeads() {
 
 const KIND = {
   joined: ['👋', 'text-brand'], trial: ['🎁', 'text-sky-700'], plan: ['⭐', 'text-emerald-700'], paid: ['₹', 'text-emerald-700'],
-  feedback: ['💬', 'text-violet-700'], support: ['🛟', 'text-amber-700'], chat: ['•', 'text-muted'], stopped: ['🛑', 'text-red-700'],
+  feedback: ['💬', 'text-violet-700'], support: ['🛟', 'text-amber-700'], app: ['📱', 'text-muted'], stopped: ['🛑', 'text-red-700'],
 };
 
 export function Journey() {
@@ -85,13 +86,14 @@ export function Journey() {
   useEffect(() => { load(); }, [load]);
   if (error && !d) return <Page title="Family journey"><ErrorBox error={error} onRetry={load} /></Page>;
   if (!d) return <Page title="Family journey"><Loading /></Page>;
-  const events = onlyKey ? d.events.filter((e) => e.kind !== 'chat' && !/quiz_(scheduled|delivered)/.test(e.kind)) : d.events;
+  const events = onlyKey ? d.events.filter((e) => e.kind !== 'app' && !/quiz_(scheduled|delivered)/.test(e.kind)) : d.events;
+  const a = d.app || {};
   return (
     <Page title={`${d.parent.name || 'Family'} — journey`}
-      subtitle={`${d.parent.masked} · joined ${dt(d.parent.created_at)} · ${num(d.messages?.received)} messages in, ${num(d.messages?.sent)} out${d.window_open ? ' · chat open now' : ''}`}
+      subtitle={`${d.parent.masked} · joined ${dt(d.parent.created_at)} · ${num(a.signins)} app sign-in(s)${a.last_visit ? `, last ${ago(a.last_visit)}` : ''} · reached by ${[a.email ? 'email' : null, a.push_devices ? 'notifications' : null].filter(Boolean).join(' + ') || 'nothing yet'}`}
       actions={<Link className="btn-sec" to={`/parents/${d.parent.id}`}>Parent details</Link>}>
       <label className="mb-3 flex items-center gap-2 text-sm text-ink">
-        <input type="checkbox" checked={onlyKey} onChange={(e) => setOnlyKey(e.target.checked)} /> Only the key moments (hide chat steps and scheduled quizzes)
+        <input type="checkbox" checked={onlyKey} onChange={(e) => setOnlyKey(e.target.checked)} /> Only the key moments (hide app sign-ins and scheduled quizzes)
       </label>
       <div className="card p-4">
         <ol className="relative ml-3 border-l-2 border-line">
@@ -162,45 +164,6 @@ export function QuizzesPerChild() {
             ))}</tbody>
           </table>
         </div>
-      )}
-    </Page>
-  );
-}
-
-/* ────────────────────────────── Stopped ────────────────────────────── */
-
-export function Stopped() {
-  const [d, setD] = useState(null);
-  const [error, setError] = useState(null);
-  const load = useCallback(() => api.hq.stopped().then((x) => { setD(x); setError(null); }).catch(setError), []);
-  useEffect(() => { load(); }, [load]);
-  return (
-    <Page title="Stopped messages" subtitle="Families and leads who replied STOP. QuizPe sends them nothing; they can still write to us.">
-      {error && !d ? <ErrorBox error={error} onRetry={load} /> : !d ? <Loading /> : (
-        <>
-          <div className="mb-4 grid grid-cols-3 gap-3">
-            {[['Families', d.counts.families], ['Leads', d.counts.leads], ['Wrote again after', d.counts.wrote_after]].map(([l, n]) => (
-              <div key={l} className="card p-3"><div className="text-[11px] font-bold uppercase text-muted">{l}</div><div className="text-xl font-extrabold text-ink">{num(n)}</div></div>
-            ))}
-          </div>
-          {!d.rows.length ? <Empty>Nobody has asked to stop. 🎉</Empty> : (
-            <div className="card overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead><tr>{['Who', 'Children', 'Stopped', 'What they said', 'Since then', ''].map((h) => <th key={h} className="th">{h}</th>)}</tr></thead>
-                <tbody>{d.rows.map((r, i) => (
-                  <tr key={i}>
-                    <td className="td"><div className="font-semibold text-ink">{r.name || 'Unknown'}</div><div className="text-[11px] text-muted">{r.masked} · {r.kind}</div></td>
-                    <td className="td text-xs">{r.children || '—'}</td>
-                    <td className="td whitespace-nowrap text-xs">{dt(r.at)}</td>
-                    <td className="td text-xs">{r.said ? `“${r.said}”` : '—'}</td>
-                    <td className="td text-xs">{r.wrote_after ? <Pill tone="green">wrote again {ago(r.last_wrote)}</Pill> : '—'}</td>
-                    <td className="td">{r.parent_id && <Link className="text-xs text-brand-accent hover:underline" to={`/journey/${r.parent_id}`}>Journey →</Link>}</td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
-          )}
-        </>
       )}
     </Page>
   );

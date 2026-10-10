@@ -17,11 +17,8 @@ import { StatTile } from '../components/Gauge.jsx';
  * which the panel had never read — so until now a failed job was something you
  * found out about by noticing a quiz had not arrived.
  *
- * ONE SERIES ON THE CHART. Inbound messages are the webhook's pulse: every one
- * is a delivery that arrived and was processed, so if Meta stops reaching us
- * the line goes flat. People and state transitions ride in the tooltip rather
- * than as extra lines — three series would need three validated hues to say
- * what one line and a tooltip already say.
+ * WhatsApp is gone (2026-10-10): its failed-sends tile and the webhook pulse chart
+ * (inbound WhatsApp messages per day) are no longer shown.
  */
 
 const C_WEBHOOK = '#0d9488';
@@ -86,18 +83,17 @@ export default function SystemHealth() {
       <div className="card p-4 mb-5 flex flex-wrap items-center gap-3">
         <Pill tone={v.tone}>{v.word}</Pill>
         <span className="text-[11px] text-muted">
-          last job finished {ago(h.seconds_since_job)} · last inbound message {ago(h.seconds_since_inbound)}
+          last job finished {ago(h.seconds_since_job)} · last family on the app {ago(h.seconds_since_app)}
+          {Number(h.failed_sends_24h) ? ` · ${h.failed_sends_24h} reminder(s) not reached in 24 hours` : ''}
         </span>
       </div>
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 mb-6">
         <StatTile label="Failed jobs" value={h.failed_jobs}
                   sub="waiting in the queue" tone={Number(h.failed_jobs) > 0 ? 'bad' : 'ink'} />
         <StatTile label="Stuck jobs" value={h.stuck_jobs}
                   sub="locked over 15 min" tone={Number(h.stuck_jobs) > 0 ? 'bad' : 'ink'} />
         <StatTile label="Queued" value={h.queued_jobs} sub="waiting to run" />
-        <StatTile label="Failed sends" value={h.failed_sends_24h}
-                  sub="WhatsApp, last 24 hours" tone={Number(h.failed_sends_24h) > 10 ? 'warn' : 'ink'} />
       </div>
 
       {d.stuck?.length > 0 && (
@@ -175,34 +171,6 @@ export default function SystemHealth() {
         )}
       </section>
 
-      <section className="card p-5 mb-6">
-        <h2 className="text-sm font-bold text-ink mb-1">Webhook pulse</h2>
-        <p className="text-[11px] text-muted mb-3">
-          Inbound messages per day. Every one is a webhook delivery that arrived and was
-          processed — if Meta stops reaching us, this goes flat.
-        </p>
-        {!d.webhook?.some((r) => r.messages) ? <Empty>No inbound messages in this period.</Empty> : (
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={d.webhook} margin={{ top: 8, right: 12, bottom: 0, left: -20 }}>
-                <CartesianGrid stroke="#e3eae8" strokeDasharray="2 4" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#667781' }}
-                       tickLine={false} axisLine={{ stroke: '#e3eae8' }} minTickGap={24} />
-                <YAxis tick={{ fontSize: 11, fill: '#667781' }} tickLine={false}
-                       axisLine={false} allowDecimals={false} width={38} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e3eae8', fontSize: 12 }} />
-                <Area type="monotone" dataKey="messages" name="Messages" stroke={C_WEBHOOK}
-                      strokeWidth={2} fill={C_WEBHOOK} fillOpacity={0.12}
-                      isAnimationActive={chartsAnimate()} />
-                <Area type="monotone" dataKey="people" name="People" stroke="transparent"
-                      fill="transparent" isAnimationActive={false} />
-                <Area type="monotone" dataKey="transitions" name="Bot steps" stroke="transparent"
-                      fill="transparent" isAnimationActive={false} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </section>
 
       <section>
         <h2 className="text-sm font-bold text-ink mb-1">Jobs, last 30 days</h2>
