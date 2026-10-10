@@ -192,6 +192,9 @@ export const api = {
     home:     () => request('/hq/home'),
     // The website — quizpe.in/app (2026-10-10).
     webOverview: () => request('/hq/web/overview'),
+    // The comeback offer for lapsed families (2026-10-10): its numbers and its switch.
+    comeback: () => request('/hq/web/comeback'),
+    saveComeback: (body) => request('/hq/web/comeback', { method: 'PUT', body }),
     webSignIns:  (days, q = '') => request(`/hq/web/sign-ins?days=${days}&q=${encodeURIComponent(q)}`),
     webFamilies: (filter = 'all', q = '') => request(`/hq/web/families?filter=${filter}&q=${encodeURIComponent(q)}`),
     graph:    (page, days) => request(`/hq/graphs/${page}?days=${days}`),

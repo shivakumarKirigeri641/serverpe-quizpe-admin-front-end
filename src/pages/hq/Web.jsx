@@ -27,6 +27,51 @@ const tile = (label, value, sub, to, tone) => {
 
 /* ───────────────────────────── Website overview ───────────────────────────── */
 
+/*
+ * THE COMEBACK OFFER (user, 2026-10-10: "give an offer to all lapsed families to take 7 days
+ * free trial — but keep it until SMS gets approved"). Families whose plan ended may restart
+ * free, once; they see it on their dashboard at quizpe.in/app. OFF until switched on here —
+ * meant to go on together with the SMS that tells them.
+ */
+function ComebackCard() {
+  const [d, setD] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const load = useCallback(() => api.hq.comeback().then(setD).catch((e) => setMsg(e.message)), []);
+  useEffect(() => { load(); }, [load]);
+  if (!d) return null;
+  const save = async (body) => {
+    setBusy(true); setMsg('');
+    try { setD(await api.hq.saveComeback(body)); setMsg('Saved.'); } catch (e) { setMsg(e.message); }
+    setBusy(false);
+  };
+  return (
+    <div className={`mb-4 rounded-2xl border p-4 ${d.on ? 'border-emerald-300 bg-emerald-50' : 'border-amber-300 bg-amber-50'}`} data-test="comeback-card">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0">
+          <div className="font-bold text-ink">🎁 Comeback offer — {d.days} days free for lapsed families · <span className={d.on ? 'text-emerald-700' : 'text-amber-700'}>{d.on ? 'ON' : 'OFF'}</span></div>
+          <div className="text-sm text-muted mt-0.5">
+            {num(d.eligible)} famil{d.eligible === 1 ? 'y' : 'ies'} can take it (plan ended, nothing running, not had it before) · {num(d.taken)} took it{d.taken_7d ? ` (${num(d.taken_7d)} this week)` : ''}.
+            {' '}{d.on ? 'They see it on their dashboard at quizpe.in/app.' : 'Switch it on with the SMS that tells them — they only see it while it is on.'}
+          </div>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <label className="text-sm text-muted">Days
+            <select className="ml-1 rounded-lg border px-2 py-1 text-sm" value={d.days} disabled={busy} onChange={(e) => save({ days: Number(e.target.value) })}>
+              {[3, 5, 7, 10, 14].map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
+          <button className={`rounded-lg px-3 py-1.5 text-sm font-semibold text-white ${d.on ? 'bg-slate-600' : 'bg-emerald-600'}`} disabled={busy}
+            onClick={() => { if (d.on || window.confirm(`Switch on the ${d.days}-day comeback offer for ${d.eligible} lapsed families?`)) save({ on: !d.on }); }}>
+            {busy ? '…' : d.on ? 'Switch off' : 'Switch on'}
+          </button>
+        </div>
+      </div>
+      {msg ? <div className="mt-2 text-xs text-muted">{msg}</div> : null}
+    </div>
+  );
+}
+
 export function WebOverview() {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
@@ -37,6 +82,7 @@ export function WebOverview() {
     <Page title="Website" subtitle="quizpe.in/app — visits, sign-ins, who is on the app now, and how reminders reach families. Refreshes every 30 seconds.">
       {error && !d ? <ErrorBox error={error} onRetry={load} /> : !d ? <Loading /> : (
         <>
+          <ComebackCard />
           <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
             {tile('Visitors today', num(d.visitors_today), `${num(d.visits_today)} page visits`, '/visitors')}
             {tile('Sign-ins today', num(d.signins_today), `${num(d.signins_7d)} in 7 days · ${num(d.codes_today)} code(s) sent today`, '/web/sign-ins')}
