@@ -190,6 +190,10 @@ export const api = {
     metaNews: () => quietly(() => request('/hq/meta-news')),
     metaSeen: (id) => request(`/hq/meta-news/${id}/seen`, { method: 'POST', quiet: true }),
     home:     () => request('/hq/home'),
+    // The website — quizpe.in/app (2026-10-10).
+    webOverview: () => request('/hq/web/overview'),
+    webSignIns:  (days, q = '') => request(`/hq/web/sign-ins?days=${days}&q=${encodeURIComponent(q)}`),
+    webFamilies: (filter = 'all', q = '') => request(`/hq/web/families?filter=${filter}&q=${encodeURIComponent(q)}`),
     graph:    (page, days) => request(`/hq/graphs/${page}?days=${days}`),
     drill:    (kind, day) => request(`/hq/drill/${kind}/${day}`),
     hotLeads: () => request('/hq/hot-leads'),

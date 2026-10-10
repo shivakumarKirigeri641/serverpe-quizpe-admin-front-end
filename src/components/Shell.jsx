@@ -6,6 +6,7 @@ import { useAllowed, useSession } from '../lib/session.jsx';
 import { api } from '../lib/api';
 import StatusStrip from './hq/StatusStrip.jsx';
 import MetaNews from './hq/MetaNews.jsx';
+import { WHATSAPP_ADMIN } from '../lib/flags';
 import {
   ChartIcon, PulseIcon, RadioIcon, GaugeIcon, TrendIcon, BoltIcon, GiftIcon,
   CalendarIcon, CalendarTickIcon, QuestionIcon, HeartIcon, UsersIcon, GlobeIcon,
@@ -41,7 +42,11 @@ const FOLD_KEY = 'quizpe.nav.folded';
  * (`badge`, from /hq/badges). Every older screen keeps its place; the old
  * Dashboard is "Overview", and Business health is the new home.
  */
-export const NAV = [
+/* WhatsApp is gone (2026-10-10): its group and items are left out unless VITE_WHATSAPP_ADMIN=1. */
+const keepWa = (x) => WHATSAPP_ADMIN || !x.wa;
+const withoutWa = (groups) => groups.filter(keepWa).map((g) => ({ ...g, items: g.items.filter(keepWa) }));
+
+export const NAV = withoutWa([
   {
     group: 'Dashboard',
     items: [
@@ -52,6 +57,16 @@ export const NAV = [
       { to: '/live',       label: 'Live activity',  icon: RadioIcon,            cap: 'dashboard.view' },
     ],
   },
+  /* THE WEBSITE (user, 2026-10-10: "start with web based activities") — quizpe.in/app. */
+  {
+    group: 'Website',
+    items: [
+      { to: '/web',          label: 'Website overview',     icon: GlobeIcon, end: true, cap: 'dashboard.view' },
+      { to: '/web/sign-ins', label: 'Sign-ins',             icon: UsersIcon, cap: 'parents.view' },
+      { to: '/web/families', label: 'Families on the app',  icon: UsersIcon, cap: 'parents.view' },
+      { to: '/visitors',     label: 'Visitors',             icon: GlobeIcon, cap: 'analytics.view' },
+    ],
+  },
   {
     group: 'Graphs',
     items: [
@@ -60,7 +75,7 @@ export const NAV = [
       { to: '/graphs/money',    label: 'Money',          icon: RupeeIcon,     cap: 'analytics.view' },
       { to: '/graphs/families', label: 'Families',       icon: UsersIcon,     cap: 'analytics.view' },
       { to: '/graphs/quizzes',  label: 'Quizzes',        icon: QuestionIcon,  cap: 'analytics.view' },
-      { to: '/graphs/whatsapp', label: 'WhatsApp',       icon: ChatIcon,      cap: 'analytics.view' },
+      { to: '/graphs/whatsapp', label: 'WhatsApp',       icon: ChatIcon,      cap: 'analytics.view', wa: true },
       { to: '/graphs/services', label: 'Services',       icon: PulseIcon,     cap: 'analytics.view' },
       { to: '/analytics',       label: 'Analytics (classic)', icon: ChartIcon, cap: 'analytics.view' },
     ],
@@ -71,8 +86,7 @@ export const NAV = [
       { to: '/parents',           label: 'Parents & students', icon: UsersIcon,  cap: 'parents.view' },
       { to: '/hot-leads',         label: 'Hot leads 🔥',        icon: BoltIcon,   cap: 'parents.view', badge: 'trials_ending' },
       { to: '/quizzes-per-child', label: 'Quizzes per child',  icon: CalendarTickIcon, cap: 'parents.view' },
-      { to: '/stopped',           label: 'Stopped messages',   icon: CloseIcon,  cap: 'parents.view' },
-      { to: '/visitors',          label: 'Visitors',           icon: GlobeIcon,  cap: 'analytics.view' },
+      { to: '/stopped',           label: 'Stopped messages',   icon: CloseIcon,  cap: 'parents.view', wa: true },
     ],
   },
   {
@@ -89,6 +103,7 @@ export const NAV = [
   },
   {
     group: 'WhatsApp',
+    wa: true,     // hidden unless VITE_WHATSAPP_ADMIN=1 (lib/flags.js)
     items: [
       { to: '/whatsapp',  label: 'Conversations',    icon: ChatIcon,      cap: 'whatsapp.view', badge: 'whatsapp_live' },
       { to: '/broadcast', label: 'Broadcast',        icon: MegaphoneIcon, cap: 'whatsapp.send', badge: 'plans_running' },
@@ -115,7 +130,7 @@ export const NAV = [
       { to: '/settings', label: 'Settings', icon: CogIcon,      cap: 'settings.view' },
     ],
   },
-];
+]);
 
 const readFolded = () => {
   try { return new Set(JSON.parse(localStorage.getItem(FOLD_KEY) || '[]')); }
@@ -283,7 +298,8 @@ export default function Shell({ brand, onSignOut, children }) {
           {children}
         </main>
       </div>
-      <MetaNews />
+      {/* Meta account news — only while WhatsApp is part of the admin. */}
+      {WHATSAPP_ADMIN ? <MetaNews /> : null}
     </>
   );
 }

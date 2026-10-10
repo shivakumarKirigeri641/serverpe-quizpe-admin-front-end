@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { useRefreshSignal } from '../../lib/motion.jsx';
+import { WHATSAPP_ADMIN } from '../../lib/flags';
+
+const WA_LIGHTS = new Set(['whatsapp', 'limit', 'peer']);
 
 /*
  * THE STATUS STRIP (admin revamp, 2026-10-05) — like GaadiPe's: one light per
@@ -23,7 +26,8 @@ const ABOUT = {
 export default function StatusStrip() {
   const [rows, setRows] = useState(null);
   const [open, setOpen] = useState(null);
-  const load = useCallback(() => api.hq.status().then((x) => setRows(x.rows)).catch(() => {}), []);
+  // WhatsApp, its shared limit and the GaadiPe link that counts it are left out while WhatsApp is gone (2026-10-10).
+  const load = useCallback(() => api.hq.status().then((x) => setRows((x.rows || []).filter((r) => WHATSAPP_ADMIN || !WA_LIGHTS.has(r.key)))).catch(() => {}), []);
   useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, [load]);
   useRefreshSignal(load);
   if (!rows) return null;

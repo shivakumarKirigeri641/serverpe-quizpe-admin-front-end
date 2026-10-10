@@ -4,6 +4,7 @@ import { ResponsiveContainer, ComposedChart, BarChart, Bar, Line, XAxis, YAxis, 
 import { api } from '../../lib/api';
 import { useAutoRefresh } from '../../lib/useAutoRefresh';
 import { chartsAnimate } from '../../lib/motion.jsx';
+import { WHATSAPP_ADMIN } from '../../lib/flags';
 import { Page, Loading, ErrorBox } from '../../components/ui.jsx';
 import { SERIES, ChartCard, Tip, Modal, Period, Tabs, inr, num, dayLabel, mask, dt } from '../../components/hq/kit.jsx';
 
@@ -12,9 +13,10 @@ import { SERIES, ChartCard, Tip, Modal, Period, Tabs, inr, num, dayLabel, mask, 
  * QuizPe's terms: seven pages, each chart readable as a table, live (every
  * minute), and a tap on a day opens who or what was behind that number.
  */
+// The WhatsApp tab only while WhatsApp is part of the admin (lib/flags.js, 2026-10-10).
 const PAGES = [
   ['overview', 'Overview'], ['funnel', 'Signup funnel'], ['money', 'Money'], ['families', 'Families'],
-  ['quizzes', 'Quizzes'], ['whatsapp', 'WhatsApp'], ['services', 'Services'],
+  ['quizzes', 'Quizzes'], ...(WHATSAPP_ADMIN ? [['whatsapp', 'WhatsApp']] : []), ['services', 'Services'],
 ];
 const DRILL = { overview: 'families', families: 'families', money: 'money', quizzes: 'quizzes', whatsapp: 'whatsapp' };
 const DRILL_TITLE = { families: 'Families who joined', money: 'Payments', quizzes: 'Quizzes', whatsapp: 'Templates sent' };
@@ -22,7 +24,9 @@ const grid = <CartesianGrid strokeDasharray="3 3" stroke="#e3eae8" vertical={fal
 const xAxis = <XAxis dataKey="d" tickFormatter={dayLabel} tick={{ fontSize: 11 }} minTickGap={16} />;
 
 export default function Graphs() {
-  const { page = 'overview' } = useParams();
+  const { page: asked = 'overview' } = useParams();
+  // An old link to the WhatsApp graphs opens the overview while WhatsApp is out of the admin.
+  const page = !WHATSAPP_ADMIN && asked === 'whatsapp' ? 'overview' : asked;
   const go = useNavigate();
   const [days, setDays] = useState(30);
   const [d, setD] = useState(null);
