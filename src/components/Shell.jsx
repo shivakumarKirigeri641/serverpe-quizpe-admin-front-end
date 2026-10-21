@@ -48,6 +48,9 @@ export const NAV = ([
       { to: '/overview',   label: 'Overview',       icon: ChartIcon,            cap: 'dashboard.view' },
       { to: '/tonight',    label: 'Tonight (live)', icon: PulseIcon,            cap: 'dashboard.view' },
       { to: '/quiz-live',  label: 'Quiz pulse',     icon: GaugeIcon,            cap: 'dashboard.view' },
+      // Who is here now, and every event in words (2026-10-21, hq/events.js) — like GaadiPe's web admin.
+      { to: '/live-now',   label: 'Live now',       icon: PulseIcon,            cap: 'dashboard.view' },
+      { to: '/event-log',  label: 'Event log',      icon: DocIcon,              cap: 'dashboard.view' },
       { to: '/live',       label: 'Live activity',  icon: RadioIcon,            cap: 'dashboard.view' },
     ],
   },

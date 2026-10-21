@@ -197,6 +197,10 @@ export const api = {
     saveComeback: (body) => request('/hq/web/comeback', { method: 'PUT', body }),
     webSignIns:  (days, q = '') => request(`/hq/web/sign-ins?days=${days}&q=${encodeURIComponent(q)}`),
     webFamilies: (filter = 'all', q = '') => request(`/hq/web/families?filter=${filter}&q=${encodeURIComponent(q)}`),
+    // The event log and who is here now (2026-10-21, hq/events.js).
+    events: (hours = 24, kind = 'all', q = '', visits = false) =>
+      request(`/hq/events?hours=${hours}&kind=${kind}&q=${encodeURIComponent(q)}&visits=${visits ? 1 : 0}`),
+    liveNow: () => request('/hq/live-now'),
     graph:    (page, days) => request(`/hq/graphs/${page}?days=${days}`),
     drill:    (kind, day) => request(`/hq/drill/${kind}/${day}`),
     hotLeads: () => request('/hq/hot-leads'),

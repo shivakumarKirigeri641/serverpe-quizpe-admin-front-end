@@ -25,6 +25,7 @@ import { HotLeads, Journey, QuizzesPerChild } from './pages/hq/Families.jsx';
 import HqMoney from './pages/hq/Money.jsx';
 import HqAlerts from './pages/hq/Alerts.jsx';
 import { WebOverview, WebSignIns, WebFamilies } from './pages/hq/Web.jsx';
+import { EventLog, LiveNow } from './pages/hq/Activity.jsx';
 
 /* WhatsApp is gone from the admin (user, 2026-10-10: "drop all WhatsApp contents"): an old
    link to one of its pages opens the website overview. */
@@ -120,6 +121,8 @@ export default function App() {
                 <Route path="/web" element={<WebOverview />} />
                 <Route path="/web/sign-ins" element={<WebSignIns />} />
                 <Route path="/web/families" element={<WebFamilies />} />
+                <Route path="/event-log" element={<EventLog />} />
+                <Route path="/live-now" element={<LiveNow />} />
                 <Route path="/stopped" element={TO_WEB} />
                 <Route path="/profit" element={<HqMoney />} />
                 <Route path="/alerts" element={<HqAlerts />} />
