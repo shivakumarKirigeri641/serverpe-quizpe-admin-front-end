@@ -57,6 +57,20 @@ const SHOWN = {
     title: 'Support ticket', tone: 'warn', life: 12000, chatty: false,
     icon: '🛟', where: () => '/support',
   },
+  // The website's events (2026-10-21, WhatsApp is gone): a new family on the app, a failed payment,
+  // a confirmed email.
+  app_signin: {
+    title: 'New family on the app', tone: 'good', life: 11000, chatty: false,
+    icon: '👋', where: (e) => (e.parent_id ? `/parents/${e.parent_id}` : '/web/families'),
+  },
+  payment_failed: {
+    title: 'Payment failed', tone: 'warn', life: 12000, chatty: false,
+    icon: '❌', where: () => '/event-log',
+  },
+  email_confirmed: {
+    title: 'Email confirmed', tone: 'info', life: 7000, chatty: true,
+    icon: '📧', where: (e) => (e.parent_id ? `/parents/${e.parent_id}` : '/web/families'),
+  },
   quiz_completed: {
     title: 'Quiz finished', tone: 'good', life: 6000, chatty: true,
     icon: '✅', where: (e) => (e.ref_id ? `/quizzes/${e.ref_id}` : '/tonight'),
@@ -75,6 +89,8 @@ const writeSince = (v) => { try { if (v) localStorage.setItem(SINCE_KEY, v); } c
 
 export default function LiveAlerts() {
   const [toasts, setToasts] = useState([]);
+  // Desktop notifications need the browser's permission, asked from a click (2026-10-21).
+  const [perm, setPerm] = useState(() => (typeof Notification === 'undefined' ? 'unsupported' : Notification.permission));
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -94,7 +110,16 @@ export default function LiveAlerts() {
 
       const id = `${e.kind}-${e.ref_id}-${e.at}`;
       setToasts((list) => (list.some((t) => t.id === id) ? list : [...list.slice(-4), { ...e, id, spec }]));
-      chime(e.kind === 'quiz_completed' || e.kind === 'said_hi' ? 'hi' : e.kind);
+      chime(e.kind === 'quiz_completed' || e.kind === 'said_hi' || e.kind === 'email_confirmed' ? 'hi'
+        : e.kind === 'app_signin' ? 'trial' : e.kind === 'payment_failed' ? 'support' : e.kind);
+      /* A DESKTOP NOTIFICATION too while this tab is in the background (2026-10-21, like GaadiPe's web
+         admin) — only when the browser has allowed it (asked once, from the bell below). */
+      try {
+        if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+          const n = new Notification(`${spec.icon} ${spec.title}`, { body: [e.who, e.detail].filter(Boolean).join(' · '), tag: id });
+          n.onclick = () => { window.focus(); navigate(spec.where(e)); n.close(); };
+        }
+      } catch { /* notifications not available */ }
       if (e.kind === 'paid' && motionLevel() === 'full') confettiBurst();
       setTimeout(() => drop(id), spec.life);
     };
@@ -131,6 +156,12 @@ export default function LiveAlerts() {
 
   return (
     <div className="fixed bottom-4 right-4 z-[70] flex flex-col gap-2 w-[min(92vw,22rem)]" role="status" aria-live="polite">
+      {perm === 'default' ? (
+        <button type="button" className="self-end rounded-full border border-line bg-white px-3 py-1.5 text-[11px] font-semibold text-ink shadow-card hover:bg-line/30"
+          onClick={() => { try { Notification.requestPermission().then((p) => setPerm(p)); } catch { setPerm('unsupported'); } }}>
+          🔔 Allow desktop pop-ups
+        </button>
+      ) : null}
       {toasts.map((t) => (
         <div
           key={t.id}
