@@ -86,6 +86,8 @@ export const NAV = ([
       // Every family who agreed — WhatsApp before it closed, the app since (2026-10-21, hq/agreed.js).
       { to: '/web/families',      label: 'All families',       icon: UsersIcon,  cap: 'parents.view' },
       { to: '/parents',           label: 'Parents & students', icon: UsersIcon,  cap: 'parents.view' },
+      // Broadcast email to confirmed families who agreed (2026-10-21, web/email.js).
+      { to: '/email-broadcast',   label: 'Broadcast email',    icon: InboxIcon,  cap: 'whatsapp.send' },
       { to: '/hot-leads',         label: 'Hot leads 🔥',        icon: BoltIcon,   cap: 'parents.view', badge: 'trials_ending' },
       { to: '/quizzes-per-child', label: 'Quizzes per child',  icon: CalendarTickIcon, cap: 'parents.view' },
     ],

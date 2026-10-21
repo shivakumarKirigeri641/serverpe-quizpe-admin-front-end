@@ -201,6 +201,9 @@ export const api = {
     events: (hours = 24, kind = 'all', q = '', visits = false) =>
       request(`/hq/events?hours=${hours}&kind=${kind}&q=${encodeURIComponent(q)}&visits=${visits ? 1 : 0}`),
     liveNow: () => request('/hq/live-now'),
+    // Broadcast email (2026-10-21, web/email.js).
+    emailBroadcast: () => request('/hq/email'),
+    emailSend: (body) => request('/hq/email', { method: 'POST', body, quiet: true }),
     graph:    (page, days) => request(`/hq/graphs/${page}?days=${days}`),
     drill:    (kind, day) => request(`/hq/drill/${kind}/${day}`),
     hotLeads: () => request('/hq/hot-leads'),
