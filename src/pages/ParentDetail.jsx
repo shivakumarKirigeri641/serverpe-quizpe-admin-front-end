@@ -91,11 +91,22 @@ export default function ParentDetail() {
           {current
             ? (() => { const d = daysLeft(current.plan_end_date); return <Pill tone={expiryTone(d)}>{expiryText(d)}</Pill>; })()
             : <Pill tone="grey">no active plan</Pill>}
+          {/* The family on one screen (2026-10-21): its journey and every event, one tap away. */}
+          <button className="btn-sec" onClick={() => navigate(`/journey/${parent.id}`)}>Journey</button>
+          <button className="btn-sec" onClick={() => navigate(`/event-log?q=${String(parent.parent_mobile_number || '').replace(/\D/g, '').slice(-10)}`)}>Events</button>
           <EditParent parent={parent} onSaved={load} />
           <button className="btn-sec" onClick={() => navigate('/parents')}>← All parents</button>
         </div>
       }
     >
+      {/* How QuizPe reaches this family now that WhatsApp is gone (2026-10-21, web/email.js). */}
+      <div className="card p-4 mb-4 flex flex-wrap items-center gap-2 text-sm">
+        <span className="font-bold text-brand mr-1">Reach</span>
+        {parent.email ? <Pill tone={parent.email_verified_at ? 'green' : 'amber'}>✉️ {parent.email}{parent.email_verified_at ? ' · confirmed' : ' · not confirmed'}</Pill> : <Pill tone="red">✉️ no email</Pill>}
+        {parent.email_unsubscribed_at ? <Pill tone="grey">unsubscribed from update emails</Pill> : null}
+        {parent.service_paused ? <Pill tone="amber">paused</Pill> : null}
+        {parent.deactivated_at ? <Pill tone="red">deactivated by the parent</Pill> : null}
+      </div>
       <div className="grid lg:grid-cols-3 gap-4 mb-4">
         <div className="card p-5">
           <h3 className="font-bold text-brand mb-3">Subscriptions</h3>

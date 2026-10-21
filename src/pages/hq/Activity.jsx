@@ -22,7 +22,8 @@ export function EventLog() {
   const [kind, setKind] = useState('all');
   const [hours, setHours] = useState(24);
   const [visits, setVisits] = useState(false);
-  const [q, setQ] = useState('');
+  // ?q= opens one family's events (from the parent page, 2026-10-21).
+  const [q, setQ] = useState(() => new URLSearchParams(window.location.search).get('q') || '');
   const [term, setTerm] = useState('');
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
