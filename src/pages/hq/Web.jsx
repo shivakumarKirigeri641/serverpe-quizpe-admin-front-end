@@ -87,7 +87,9 @@ export function WebOverview() {
             {tile('Visitors today', num(d.visitors_today), `${num(d.visits_today)} page visits`, '/visitors')}
             {tile('Sign-ins today', num(d.signins_today), `${num(d.signins_7d)} in 7 days · ${num(d.codes_today)} code(s) sent today`, '/web/sign-ins')}
             {tile('On the app now', num(d.online_now), `seen in the last 15 minutes · ${num(d.open_sessions)} signed in`, '/web/sign-ins')}
-            {tile('Families on the app', num(d.web_families), `${num(d.active_30d)} signed in this month`, '/web/families')}
+            {/* Every family who agreed — WhatsApp before it closed, the app since (2026-10-21). */}
+            {tile('Families (agreed)', num(d.agreed_families), `${num(d.web_families)} on the app · ${num(d.whatsapp_not_on_app)} from WhatsApp, not on the app yet`, '/web/families')}
+            {tile('Families on the app', num(d.web_families), `${num(d.active_30d)} signed in this month`, '/web/families?filter=web')}
             {tile('Reached by email', num(d.email_families), 'families with an email on file', '/web/families?filter=no_email')}
             {tile('Phone notifications on', num(d.push_families), 'families who allowed them', '/web/families?filter=push')}
             {tile('Cannot be reached', num(d.unreachable), 'on the app, but no email and no notifications', '/web/families?filter=unreachable', d.unreachable ? 'warn' : undefined)}
@@ -154,8 +156,10 @@ export function WebSignIns() {
 
 /* ──────────────────────────── Families on the app ─────────────────────────── */
 
+/* Where they agreed (2026-10-21): the app, WhatsApp before it closed, or both — hq/agreed.js. */
+const CHANNEL = { web: ['On the app', 'blue'], whatsapp: ['From WhatsApp', 'amber'], both: ['WhatsApp → app', 'green'] };
 const FAMILY_TABS = [
-  ['all', 'Everyone'], ['unreachable', '⚠️ Cannot be reached'], ['no_email', 'No email'], ['push', '🔔 Notifications on'],
+  ['all', 'Everyone'], ['whatsapp', 'From WhatsApp (not on the app yet)'], ['both', 'WhatsApp → app'], ['web', 'App only'], ['unreachable', '⚠️ Cannot be reached'], ['no_email', 'No email'], ['push', '🔔 Notifications on'],
   ['trial', 'Free trial'], ['paid', 'Paid plan'], ['not_enrolled', 'Not enrolled'],
 ];
 
@@ -170,15 +174,19 @@ export function WebFamilies() {
   useEffect(() => { load(); }, [load]);
   useAutoRefresh(load, 60000);
   return (
-    <Page title="Families on the app" subtitle="Every family that has signed in to quizpe.in/app — their plan, and how reminders reach them (email, phone notifications)."
+    <Page title="Families" subtitle="Every family who agreed to QuizPe's terms — on WhatsApp before it closed, or on quizpe.in/app since; never anyone who only said Hi or replied STOP. Their plan, and how reminders reach them."
       actions={<input className="input !w-56 !py-1.5 text-sm" placeholder="Mobile or name" value={q} onChange={(e) => setQ(e.target.value)} />}>
       <Tabs tabs={FAMILY_TABS.map(([k, l]) => [k, l])} value={filter} onChange={setFilter} />
+      {d?.by_channel ? (
+        <div className="mb-3 text-[11px] text-muted">{num(d.total)} families · {num(d.by_channel.web)} app only · {num(d.by_channel.both)} came from WhatsApp and are on the app · {num(d.by_channel.whatsapp)} from WhatsApp, not on the app yet</div>
+      ) : null}
       {error && !d ? <ErrorBox error={error} onRetry={load} /> : !d ? <Loading /> : !d.rows.length ? <Empty>Nobody here.</Empty> : (
-        <Table head={['Family', 'Plan', 'Children', 'Reminders reach them', 'Sign-ins', 'Last on the app', 'First sign-in']}>
+        <Table head={['Family', 'Came through', 'Plan', 'Children', 'Reminders reach them', 'Sign-ins', 'Last seen', 'Since']}>
           {d.rows.map((r, i) => (
             <Row key={r.mobile} index={i}>
               <td className="td">{r.parent_id ? <Link className="font-semibold text-brand-accent hover:underline" to={`/parents/${r.parent_id}`}>{r.name || '—'}</Link> : <span className="text-muted">{r.name || 'not enrolled yet'}</span>}
                 <div className="text-[11px] tabular-nums text-muted">{r.mobile}</div></td>
+              <td className="td"><Pill tone={(CHANNEL[r.channel] || CHANNEL.web)[1]}>{(CHANNEL[r.channel] || CHANNEL.web)[0]}</Pill></td>
               <td className="td"><Pill tone={PLAN_TONE[r.plan]}>{r.plan}</Pill>{r.plan_ends ? <div className="mt-0.5 text-[11px] text-muted">{r.plan_name} · ends {String(r.plan_ends).slice(0, 10)}</div> : null}</td>
               <td className="td tabular-nums">{num(r.children)}</td>
               <td className="td">
@@ -189,7 +197,7 @@ export function WebFamilies() {
                 </div>
               </td>
               <td className="td tabular-nums">{num(r.signins)}{r.signed_in ? <div className="text-[11px] text-emerald-700">signed in</div> : null}</td>
-              <td className="td whitespace-nowrap text-xs">{ago(r.last_at)}</td>
+              <td className="td whitespace-nowrap text-xs">{r.last_at ? `app ${ago(r.last_at)}` : ''}{r.wa_last ? <div className="text-[11px] text-muted">WhatsApp {ago(r.wa_last)}</div> : null}</td>
               <td className="td whitespace-nowrap text-xs">{dt(r.first_at)}</td>
             </Row>
           ))}

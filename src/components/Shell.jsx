@@ -57,7 +57,6 @@ export const NAV = ([
     items: [
       { to: '/web',          label: 'Website overview',     icon: GlobeIcon, end: true, cap: 'dashboard.view' },
       { to: '/web/sign-ins', label: 'Sign-ins',             icon: UsersIcon, cap: 'parents.view' },
-      { to: '/web/families', label: 'Families on the app',  icon: UsersIcon, cap: 'parents.view' },
       { to: '/visitors',     label: 'Visitors',             icon: GlobeIcon, cap: 'analytics.view' },
       // The website's inbox (enquiries, testimonials, ratings) — it sat under WhatsApp before.
       { to: '/inbox',        label: 'Inbox',                icon: InboxIcon, cap: 'parents.view' },
@@ -81,6 +80,8 @@ export const NAV = ([
   {
     group: 'Families',
     items: [
+      // Every family who agreed — WhatsApp before it closed, the app since (2026-10-21, hq/agreed.js).
+      { to: '/web/families',      label: 'All families',       icon: UsersIcon,  cap: 'parents.view' },
       { to: '/parents',           label: 'Parents & students', icon: UsersIcon,  cap: 'parents.view' },
       { to: '/hot-leads',         label: 'Hot leads 🔥',        icon: BoltIcon,   cap: 'parents.view', badge: 'trials_ending' },
       { to: '/quizzes-per-child', label: 'Quizzes per child',  icon: CalendarTickIcon, cap: 'parents.view' },
