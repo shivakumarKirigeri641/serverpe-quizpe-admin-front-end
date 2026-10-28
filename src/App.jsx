@@ -25,6 +25,7 @@ import { HotLeads, Journey, QuizzesPerChild } from './pages/hq/Families.jsx';
 import HqMoney from './pages/hq/Money.jsx';
 import HqAlerts from './pages/hq/Alerts.jsx';
 import { WebOverview, WebSignIns, WebFamilies } from './pages/hq/Web.jsx';
+import Mcq from './pages/hq/Mcq.jsx';
 import { EventLog, LiveNow } from './pages/hq/Activity.jsx';
 import EmailBroadcast from './pages/hq/EmailBroadcast.jsx';
 
@@ -122,6 +123,7 @@ export default function App() {
                 <Route path="/web" element={<WebOverview />} />
                 <Route path="/web/sign-ins" element={<WebSignIns />} />
                 <Route path="/web/families" element={<WebFamilies />} />
+                <Route path="/mcq" element={<Mcq />} />
                 <Route path="/event-log" element={<EventLog />} />
                 <Route path="/live-now" element={<LiveNow />} />
                 <Route path="/email-broadcast" element={<EmailBroadcast />} />

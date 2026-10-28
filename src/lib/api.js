@@ -199,6 +199,7 @@ export const api = {
     webFamilies: (filter = 'all', q = '') => request(`/hq/web/families?filter=${filter}&q=${encodeURIComponent(q)}`),
     // Pay as you answer (2026-10-28): a family's MCQ balance, and a support top-up (reason required, audited).
     mcq: (parentId) => request(`/hq/mcq/${parentId}`),
+    mcqStats: (days = 30) => request(`/hq/mcq-stats?days=${days}`),
     mcqTopup: (parentId, mcqs, note) => request(`/hq/mcq/${parentId}/topup`, { method: 'POST', body: { mcqs, note } }),
     // The event log and who is here now (2026-10-21, hq/events.js).
     events: (hours = 24, kind = 'all', q = '', visits = false) =>

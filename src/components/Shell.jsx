@@ -107,6 +107,8 @@ export const NAV = ([
   {
     group: 'Money',
     items: [
+      // Pay as you answer (2026-10-28): recharges, the free 50, MCQs answered, this period vs the last.
+      { to: '/mcq',     label: 'Pay as you answer', icon: RupeeIcon, cap: 'finance.view' },
       { to: '/profit',  label: 'Profit & loss', icon: RupeeIcon, cap: 'finance.view' },
       { to: '/finance', label: 'Finance & GST', icon: RupeeIcon, cap: 'finance.view' },
       { to: '/reports', label: 'Reports',       icon: DocIcon,   cap: 'reports.view' },
