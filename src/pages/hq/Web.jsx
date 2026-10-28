@@ -158,10 +158,35 @@ export function WebSignIns() {
 
 /* Where they agreed (2026-10-21): the app, WhatsApp before it closed, or both — hq/agreed.js. */
 const CHANNEL = { web: ['On the app', 'blue'], whatsapp: ['From WhatsApp', 'amber'], both: ['WhatsApp → app', 'green'] };
+/* Which WhatsApp number (2026-10-28): 🆕 has written to the new +91 83173 19463; 📵 only ever used the old,
+   banned number — still to bring back (the SMS "QuizPe is back on WhatsApp"). */
+const WA_NUMBER = { new: ['🆕 New number', 'green'], old: ['📵 Old number only', 'amber'] };
 const FAMILY_TABS = [
-  ['all', 'Everyone'], ['whatsapp', 'From WhatsApp (not on the app yet)'], ['both', 'WhatsApp → app'], ['web', 'App only'], ['unreachable', '⚠️ Cannot be reached'], ['no_email', 'No email'], ['push', '🔔 Notifications on'],
+  ['all', 'Everyone'], ['new_number', '🆕 On the new number'], ['old_number', '📵 Old number — to bring back'],
+  ['whatsapp', 'From WhatsApp (not on the app yet)'], ['both', 'WhatsApp → app'], ['web', 'App only'], ['unreachable', '⚠️ Cannot be reached'], ['no_email', 'No email'], ['push', '🔔 Notifications on'],
   ['trial', 'Free trial'], ['paid', 'Paid plan'], ['not_enrolled', 'Not enrolled'],
 ];
+
+/* MCQs left, and a support top-up (pay as you answer, 2026-10-28): how many, and why — kept in the audit log. */
+function McqCell({ parentId, left, onDone }) {
+  const [busy, setBusy] = useState(false);
+  const topUp = async () => {
+    const mcqs = Number(window.prompt('Add how many MCQs? (1-2000, valid till 31 Mar)', '50'));
+    if (!(mcqs >= 1 && mcqs <= 2000)) return;
+    const note = String(window.prompt('Reason (kept in the audit log):', 'Support: ') || '').trim();
+    if (note.length < 3) return;
+    setBusy(true);
+    try { const r = await api.hq.mcqTopup(parentId, mcqs, note); window.alert(r.message || 'Added.'); onDone?.(); }
+    catch (e) { window.alert(e.message); }
+    setBusy(false);
+  };
+  return (
+    <div className="whitespace-nowrap">
+      <b className={left > 0 ? 'text-ink' : 'text-muted'}>{num(left || 0)}</b>
+      <button type="button" className="ml-2 text-[11px] font-semibold text-brand-accent hover:underline" disabled={busy} onClick={topUp}>{busy ? '…' : '+ top up'}</button>
+    </div>
+  );
+}
 
 export function WebFamilies() {
   const [filter, setFilter] = useState(() => new URLSearchParams(window.location.search).get('filter') || 'all');
@@ -178,15 +203,20 @@ export function WebFamilies() {
       actions={<input className="input !w-56 !py-1.5 text-sm" placeholder="Mobile or name" value={q} onChange={(e) => setQ(e.target.value)} />}>
       <Tabs tabs={FAMILY_TABS.map(([k, l]) => [k, l])} value={filter} onChange={setFilter} />
       {d?.by_channel ? (
-        <div className="mb-3 text-[11px] text-muted">{num(d.total)} families · {num(d.by_channel.web)} app only · {num(d.by_channel.both)} came from WhatsApp and are on the app · {num(d.by_channel.whatsapp)} from WhatsApp, not on the app yet</div>
+        <div className="mb-3 text-[11px] text-muted">{num(d.total)} families · {num(d.by_channel.web)} app only · {num(d.by_channel.both)} came from WhatsApp and are on the app · {num(d.by_channel.whatsapp)} from WhatsApp, not on the app yet
+          {d.by_number ? <> · <b className="text-emerald-700">🆕 {num(d.by_number.new)} on the new number</b> · <b className="text-amber-700">📵 {num(d.by_number.old)} old number only</b></> : null}</div>
       ) : null}
       {error && !d ? <ErrorBox error={error} onRetry={load} /> : !d ? <Loading /> : !d.rows.length ? <Empty>Nobody here.</Empty> : (
-        <Table head={['Family', 'Came through', 'Plan', 'Children', 'Reminders reach them', 'Sign-ins', 'Last seen', 'Since']}>
+        <Table head={['Family', 'Came through', 'WhatsApp number', 'MCQs', 'Plan', 'Children', 'Reminders reach them', 'Sign-ins', 'Last seen', 'Since']}>
           {d.rows.map((r, i) => (
             <Row key={r.mobile} index={i}>
-              <td className="td">{r.parent_id ? <Link className="font-semibold text-brand-accent hover:underline" to={`/parents/${r.parent_id}`}>{r.name || '—'}</Link> : <span className="text-muted">{r.name || 'not enrolled yet'}</span>}
+              <td className="td">{r.parent_id ? <Link className="font-semibold text-brand-accent hover:underline" to={`/parents/${r.parent_id}`}>{r.wa_number ? `${WA_NUMBER[r.wa_number][0].split(' ')[0]} ` : ''}{r.name || '—'}</Link> : <span className="text-muted">{r.wa_number ? `${WA_NUMBER[r.wa_number][0].split(' ')[0]} ` : ''}{r.name || 'not enrolled yet'}</span>}
                 <div className="text-[11px] tabular-nums text-muted">{r.mobile}</div></td>
               <td className="td"><Pill tone={(CHANNEL[r.channel] || CHANNEL.web)[1]}>{(CHANNEL[r.channel] || CHANNEL.web)[0]}</Pill></td>
+              <td className="td">{r.wa_number ? <Pill tone={WA_NUMBER[r.wa_number][1]}>{WA_NUMBER[r.wa_number][0]}</Pill> : <span className="text-muted text-xs">—</span>}
+                {r.wa_number === 'new' ? <div className="mt-0.5 text-[11px] text-muted">since {dt(r.wa_new_first)}</div>
+                  : r.wa_number === 'old' ? <div className="mt-0.5 text-[11px] text-muted">last {dt(r.wa_old_last)}</div> : null}</td>
+              <td className="td tabular-nums">{r.parent_id ? <McqCell parentId={r.parent_id} left={r.mcq_left} onDone={load} /> : <span className="text-muted text-xs">—</span>}</td>
               <td className="td"><Pill tone={PLAN_TONE[r.plan]}>{r.plan}</Pill>{r.plan_ends ? <div className="mt-0.5 text-[11px] text-muted">{r.plan_name} · ends {String(r.plan_ends).slice(0, 10)}</div> : null}</td>
               <td className="td tabular-nums">{num(r.children)}</td>
               <td className="td">
