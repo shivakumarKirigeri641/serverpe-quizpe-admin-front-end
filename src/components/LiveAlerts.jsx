@@ -57,6 +57,10 @@ const SHOWN = {
     title: 'Free 50 started', tone: 'good', life: 9000, chatty: false,
     icon: '🎁', where: (e) => (e.parent_id ? `/parents/${e.parent_id}` : '/mcq'),
   },
+  mcq_referral: {
+    title: 'Invite bonus paid', tone: 'good', life: 9000, chatty: false,
+    icon: '🎁', where: (e) => (e.parent_id ? `/parents/${e.parent_id}` : '/mcq'),
+  },
   // WhatsApp is back (new number, 2026-10-28): someone writing for the very first time pops again.
   said_hi: {
     title: 'New on WhatsApp', tone: 'good', life: 9000, chatty: true,

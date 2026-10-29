@@ -34,7 +34,7 @@ function Tile({ label, value, sub, change, prev, to, tone }) {
   return to ? <Link to={to} className="block">{body}</Link> : body;
 }
 
-const SRC = { recharge: ['Recharge', 'green'], admin: ['Admin top-up', 'blue'] };
+const SRC = { recharge: ['Recharge', 'green'], admin: ['Admin top-up', 'blue'], referral: ['Invite bonus', 'amber'] };
 
 export default function Mcq() {
   const [days, setDays] = useState(30);
@@ -83,6 +83,14 @@ export default function Mcq() {
             sub="they get a low-balance alert at 6 PM" />
           <Tile label="Since launch" value={inr(d.ever.rupees_ever)}
             sub={`${num(d.ever.recharges_ever)} recharges · ${num(d.ever.paying_ever)} families · ${num(d.ever.free_ever)} free starts`} />
+        </div>
+
+        <h3 className="mb-2 text-sm font-extrabold text-brand">Refer &amp; earn — last {days} days</h3>
+        <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Tile label="Friends joined by invite" value={num(c.referred_joined)} change={ch.referred_joined} prev={p.referred_joined}
+            sub="each started with 50 + 25 free" />
+          <Tile label="Invite bonuses paid" value={num(c.referral_rewards)} change={ch.referral_rewards} prev={p.referral_rewards}
+            sub={`${num(c.referral_mcqs)} MCQs to referrers · after the friend's first 10 answers`} />
         </div>
 
         {c.topups ? <p className="mb-4 text-[11px] text-muted">Admin top-ups in this period: {num(c.topups)} · {num(c.topup_mcqs)} MCQs.</p> : null}

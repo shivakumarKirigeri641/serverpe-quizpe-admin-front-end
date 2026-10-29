@@ -26,6 +26,7 @@ const KIND = {
   mcq_recharge:   { icon: '💰', label: 'Recharge',  dot: 'bg-emerald-600' },
   mcq_free:       { icon: '🎁', label: 'Free 50',   dot: 'bg-amber-400' },
   mcq_topup:      { icon: '➕', label: 'Top-up',    dot: 'bg-sky-400' },
+  mcq_referral:   { icon: '🎁', label: 'Invite bonus', dot: 'bg-pink-500' },
   feedback:       { icon: '⭐', label: 'Feedback',  dot: 'bg-yellow-500' },
   support:        { icon: '💬', label: 'Support',   dot: 'bg-rose-500' },
 };
@@ -46,7 +47,7 @@ const SECTIONS = [
     blurb: 'MCQ recharges, free-50 starts, top-ups and plan payments as they happen',
     icon: '💳',
     accent: 'from-violet-500 to-fuchsia-500',
-    kinds: ['mcq_recharge', 'mcq_free', 'mcq_topup', 'trial', 'paid'],
+    kinds: ['mcq_recharge', 'mcq_free', 'mcq_referral', 'mcq_topup', 'trial', 'paid'],
     stat: (c) => `${c.recharges ?? 0} recharge · ${c.free_starts ?? 0} free start · ${c.paid ?? 0} plan`,
   },
   {
