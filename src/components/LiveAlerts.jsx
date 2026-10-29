@@ -48,7 +48,20 @@ const SHOWN = {
     title: 'Free trial started', tone: 'good', life: 9000, chatty: false,
     icon: '🌱', where: (e) => (e.parent_id ? `/parents/${e.parent_id}` : '/parents'),
   },
-  // No WhatsApp alerts (2026-10-10): "said hi" and "broadcast finished" are gone with it.
+  // PAY AS YOU ANSWER (2026-10-29): a recharge pops like a payment; the free 50 like a new trial.
+  mcq_recharge: {
+    title: 'MCQ recharge', tone: 'paid', life: 14000, chatty: false,
+    icon: '💰', where: () => '/mcq',
+  },
+  mcq_free: {
+    title: 'Free 50 started', tone: 'good', life: 9000, chatty: false,
+    icon: '🎁', where: (e) => (e.parent_id ? `/parents/${e.parent_id}` : '/mcq'),
+  },
+  // WhatsApp is back (new number, 2026-10-28): someone writing for the very first time pops again.
+  said_hi: {
+    title: 'New on WhatsApp', tone: 'good', life: 9000, chatty: true,
+    icon: '👋', where: (e) => (e.parent_id ? `/parents/${e.parent_id}` : '/web/families'),
+  },
   feedback: {
     title: 'New feedback', tone: 'info', life: 11000, chatty: false,
     icon: '⭐', where: () => '/support',
@@ -111,7 +124,8 @@ export default function LiveAlerts() {
       const id = `${e.kind}-${e.ref_id}-${e.at}`;
       setToasts((list) => (list.some((t) => t.id === id) ? list : [...list.slice(-4), { ...e, id, spec }]));
       chime(e.kind === 'quiz_completed' || e.kind === 'said_hi' || e.kind === 'email_confirmed' ? 'hi'
-        : e.kind === 'app_signin' ? 'trial' : e.kind === 'payment_failed' ? 'support' : e.kind);
+        : e.kind === 'app_signin' || e.kind === 'mcq_free' ? 'trial' : e.kind === 'mcq_recharge' ? 'paid'
+        : e.kind === 'payment_failed' ? 'support' : e.kind);
       /* A DESKTOP NOTIFICATION too while this tab is in the background (2026-10-21, like GaadiPe's web
          admin) — only when the browser has allowed it (asked once, from the bell below). */
       try {
@@ -120,7 +134,7 @@ export default function LiveAlerts() {
           n.onclick = () => { window.focus(); navigate(spec.where(e)); n.close(); };
         }
       } catch { /* notifications not available */ }
-      if (e.kind === 'paid' && motionLevel() === 'full') confettiBurst();
+      if ((e.kind === 'paid' || e.kind === 'mcq_recharge') && motionLevel() === 'full') confettiBurst();
       setTimeout(() => drop(id), spec.life);
     };
 

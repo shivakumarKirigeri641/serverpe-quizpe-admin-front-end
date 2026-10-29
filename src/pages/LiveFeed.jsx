@@ -23,6 +23,9 @@ const KIND = {
   quiz_completed: { icon: '✅', label: 'Completed', dot: 'bg-emerald-500' },
   trial:          { icon: '🎁', label: 'Trial',     dot: 'bg-amber-500' },
   paid:           { icon: '💳', label: 'Paid',      dot: 'bg-violet-500' },
+  mcq_recharge:   { icon: '💰', label: 'Recharge',  dot: 'bg-emerald-600' },
+  mcq_free:       { icon: '🎁', label: 'Free 50',   dot: 'bg-amber-400' },
+  mcq_topup:      { icon: '➕', label: 'Top-up',    dot: 'bg-sky-400' },
   feedback:       { icon: '⭐', label: 'Feedback',  dot: 'bg-yellow-500' },
   support:        { icon: '💬', label: 'Support',   dot: 'bg-rose-500' },
 };
@@ -39,12 +42,12 @@ const SECTIONS = [
   },
   {
     id: 'subs',
-    title: 'Subscriptions',
-    blurb: 'New trials and paid enrolments as they happen',
+    title: 'Money & sign-ups',
+    blurb: 'MCQ recharges, free-50 starts, top-ups and plan payments as they happen',
     icon: '💳',
     accent: 'from-violet-500 to-fuchsia-500',
-    kinds: ['trial', 'paid'],
-    stat: (c) => `${c.trials ?? 0} trial · ${c.paid ?? 0} paid today`,
+    kinds: ['mcq_recharge', 'mcq_free', 'mcq_topup', 'trial', 'paid'],
+    stat: (c) => `${c.recharges ?? 0} recharge · ${c.free_starts ?? 0} free start · ${c.paid ?? 0} plan`,
   },
   {
     id: 'voice',
