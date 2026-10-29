@@ -76,17 +76,10 @@ const SHOWN = {
   },
   // The website's events (2026-10-21, WhatsApp is gone): a new family on the app, a failed payment,
   // a confirmed email.
-  app_signin: {
-    title: 'New family on the app', tone: 'good', life: 11000, chatty: false,
-    icon: '👋', where: (e) => (e.parent_id ? `/parents/${e.parent_id}` : '/web/families'),
-  },
+  // 'New family on the app' and 'Email confirmed' are gone with the web account (2026-10-29: /app opens WhatsApp).
   payment_failed: {
     title: 'Payment failed', tone: 'warn', life: 12000, chatty: false,
     icon: '❌', where: () => '/event-log',
-  },
-  email_confirmed: {
-    title: 'Email confirmed', tone: 'info', life: 7000, chatty: true,
-    icon: '📧', where: (e) => (e.parent_id ? `/parents/${e.parent_id}` : '/web/families'),
   },
   quiz_completed: {
     title: 'Quiz finished', tone: 'good', life: 6000, chatty: true,

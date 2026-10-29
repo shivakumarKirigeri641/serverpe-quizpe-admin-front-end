@@ -15,10 +15,13 @@ import { inr, num } from '../../components/hq/kit.jsx';
 export default function Home() {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
-  // The website's figures (2026-10-10) — QuizPe runs on quizpe.in/app; there is no WhatsApp.
-  const [w, setW] = useState(null);
+  // BACK ON WHATSAPP (2026-10-29: the website figures are hidden): pay-as-you-answer today, and the free-50 → paid
+  // rate over 30 days, in place of sign-ins, visitors and app reach.
+  const [m1, setM1] = useState(null);
+  const [m30, setM30] = useState(null);
   const load = useCallback(() => {
-    api.hq.webOverview().then(setW).catch(() => {});
+    api.hq.mcqStats(1).then(setM1).catch(() => {});
+    api.hq.mcqStats(30).then(setM30).catch(() => {});
     return api.hq.home().then((x) => { setD(x); setError(null); }).catch(setError);
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -26,7 +29,8 @@ export default function Home() {
   if (error && !d) return <Page title="Business health"><ErrorBox error={error} onRetry={load} /></Page>;
   if (!d) return <Page title="Business health"><Loading /></Page>;
 
-  const reachPct = w && w.web_families ? Math.round((100 * (w.web_families - w.unreachable)) / w.web_families) : null;
+  const conv = m30?.cur?.free_conversion_pct ?? null;
+  const t = m1?.cur || {};
   const tile = (label, value, sub, to) => {
     const body = (
       <div className="card h-full p-4 transition hover:shadow-lg">
@@ -47,10 +51,10 @@ export default function Home() {
         <PressureGauge label="Families paying" danger="low" max={100} bands={[0.3, 0.1]}
           value={d.paying_share} text={d.paying_share == null ? undefined : `${d.paying_share}%`}
           caption={`${num(d.paying)} paying · ${num(d.on_trial)} on trial`} />
-        {/* How many families on the app reminders can reach (email or phone notifications). */}
-        <PressureGauge label="Families reachable" danger="low" max={100} bands={[0.8, 0.5]}
-          value={reachPct} text={reachPct == null ? undefined : `${reachPct}%`}
-          caption={w ? `${num(w.web_families - w.unreachable)} of ${num(w.web_families)} on the app` : 'loading…'} />
+        {/* Of the families who took the free 50 in 30 days, how many have recharged since. */}
+        <PressureGauge label="Free 50 → recharged" danger="low" max={100} bands={[0.2, 0.05]}
+          value={conv} text={conv == null ? undefined : `${conv}%`}
+          caption={m30 ? `${num(m30.cur.free_then_paid)} of ${num(m30.cur.free_given)} free starts · 30 days` : 'loading…'} />
         <PressureGauge label="Average score today" danger="low" max={100} bands={[0.6, 0.4]}
           value={d.avg_score_today} text={d.avg_score_today == null ? undefined : `${d.avg_score_today}%`} caption="of finished quizzes" />
         <PressureGauge label="Rating (30 days)" danger="low" max={5} bands={[0.8, 0.6]}
@@ -61,13 +65,13 @@ export default function Home() {
         {tile('Families', num(d.families), `+${num(d.families_today)} today · ${num(d.children)} children`, '/parents')}
         {tile('Paying now', num(d.paying), `${num(d.on_trial)} on free trial · ${num(d.lapsed)} lapsed`, '/hot-leads')}
         {tile('Revenue today', inr(d.revenue_today), `This month ${inr(d.revenue_month)}`, '/profit')}
-        {tile('Sign-ins today', num(d.signins_today), `${num(d.on_app_now)} on the app now · ${num(d.open_tickets)} open support ticket(s)`, '/web/sign-ins')}
-        {tile('Quizzes today', num(d.quizzes_today), `${num(d.completed_today)} finished`, '/quizzes-per-child')}
-        {tile('Visitors today', num(d.visitors_today), `${num(w?.visits_today)} page visits`, '/graphs/website')}
-        {tile('Families on the app', num(w?.web_families), `${num(w?.active_30d)} signed in this month`, '/web/families')}
-        {tile('Cannot be reached', num(w?.unreachable), 'on the app, no email and no notifications', '/graphs/reach')}
+        {tile('Quizzes today', num(d.quizzes_today), `${num(d.completed_today)} finished · ${num(d.open_tickets)} open support ticket(s)`, '/quizzes-per-child')}
+        {tile('Recharges (24 h)', num(t.recharges), `${inr(t.rupees)} + GST · ${num(t.new_payers)} new payer(s)`, '/mcq')}
+        {tile('MCQs answered (24 h)', num(t.mcqs_answered), `${num(t.free_answered)} free · ${num(t.paid_answered)} paid`, '/mcq')}
+        {tile('Free 50 started (24 h)', num(t.free_given), `${num(t.referred_joined)} by a friend's invite`, '/mcq')}
+        {tile('Families with MCQs', num(m1?.now?.families_with_balance), `${num(m1?.now?.low_families)} running low (1–20 left)`, '/web/families')}
       </div>
-      <p className="text-[11px] text-muted">QuizPe runs on quizpe.in/app; reminders reach families by email and phone notifications.</p>
+      <p className="text-[11px] text-muted">QuizPe runs on WhatsApp (+91 83173 19463): quizzes, recharges, reports and invoices all happen in the chat.</p>
     </Page>
   );
 }

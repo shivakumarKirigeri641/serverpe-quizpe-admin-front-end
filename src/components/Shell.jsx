@@ -54,24 +54,14 @@ export const NAV = ([
       { to: '/live',       label: 'Live activity',  icon: RadioIcon,            cap: 'dashboard.view' },
     ],
   },
-  /* THE WEBSITE (user, 2026-10-10: "start with web based activities") — quizpe.in/app. */
-  {
-    group: 'Website',
-    items: [
-      { to: '/web',          label: 'Website overview',     icon: GlobeIcon, end: true, cap: 'dashboard.view' },
-      { to: '/web/sign-ins', label: 'Sign-ins',             icon: UsersIcon, cap: 'parents.view' },
-      { to: '/visitors',     label: 'Visitors',             icon: GlobeIcon, cap: 'analytics.view' },
-      // The website's inbox (enquiries, testimonials, ratings) — it sat under WhatsApp before.
-      { to: '/inbox',        label: 'Inbox',                icon: InboxIcon, cap: 'parents.view' },
-    ],
-  },
+  /* THE WEBSITE GROUP IS HIDDEN (user, 2026-10-29: "remove or hide the website comebacks, website all contents"):
+     QuizPe is on WhatsApp again and quizpe.in/app now opens WhatsApp. Website overview (with the comeback offer),
+     Sign-ins, Visitors and the Website / App-funnel graphs are off the menu; their pages still open by URL
+     (/web, /web/sign-ins, /visitors, /graphs/website, /graphs/funnel) if ever needed. Inbox moved to Operations. */
   {
     group: 'Graphs',
     items: [
-      // The website and the app (2026-10-10) — no WhatsApp graphs.
       { to: '/graphs/overview', label: 'Overview',       icon: TrendIcon,     cap: 'analytics.view' },
-      { to: '/graphs/website',  label: 'Website',        icon: GlobeIcon,     cap: 'analytics.view' },
-      { to: '/graphs/funnel',   label: 'App funnel',     icon: TrendIcon,     cap: 'analytics.view' },
       { to: '/graphs/families', label: 'Families',       icon: UsersIcon,     cap: 'analytics.view' },
       { to: '/graphs/quizzes',  label: 'Quizzes',        icon: QuestionIcon,  cap: 'analytics.view' },
       { to: '/graphs/money',    label: 'Money',          icon: RupeeIcon,     cap: 'analytics.view' },
@@ -119,6 +109,8 @@ export const NAV = ([
     items: [
       { to: '/alerts',   label: 'Alerts',        icon: RadioIcon,    cap: 'dashboard.view', badge: 'alerts' },
       { to: '/support',  label: 'Support',       icon: LifebuoyIcon, cap: 'support.view',   badge: 'support_open' },
+      // Enquiries, testimonials and ratings from the site's forms (moved from the hidden Website group).
+      { to: '/inbox',    label: 'Inbox',         icon: InboxIcon,    cap: 'parents.view' },
       { to: '/system',   label: 'System health', icon: PulseIcon,    cap: 'dashboard.view' },
       { to: '/audit',    label: 'Audit log',     icon: DocIcon,      cap: 'admins.manage' },
       { to: '/settings', label: 'Settings', icon: CogIcon,      cap: 'settings.view' },
