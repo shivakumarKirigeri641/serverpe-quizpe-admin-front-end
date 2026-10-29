@@ -51,7 +51,7 @@ export default function Mcq() {
 
   return (
     <Page title="Pay as you answer"
-      subtitle="MCQ recharges, the free 50, MCQs answered — this period against the one before. Recharges ₹50 / ₹100 / ₹200 + GST; every balance ends on 31 March."
+      subtitle="MCQ recharges, the free 50, MCQs answered — this period against the one before. Recharges ₹99 / ₹169 / ₹249 + GST; every balance ends on 31 March."
       actions={<Period value={days} onChange={setDays} options={[7, 30, 90, 365]} />}>
       {error && !d ? <ErrorBox error={error} onRetry={load} /> : !d ? <Loading /> : (<>
         <h3 className="mb-2 text-sm font-extrabold text-brand">Money — last {days} days</h3>
